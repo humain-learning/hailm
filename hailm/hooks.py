@@ -8,19 +8,22 @@ app_license = "mit"
 # Apps
 # ------------------
 
-# required_apps = []
+required_apps = ["crm"]
 
 # Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "hailm",
-# 		"logo": "/assets/hailm/logo.png",
-# 		"title": "HAILM",
-# 		"route": "/hailm",
-# 		"has_permission": "hailm.api.permission.has_app_permission"
-# 	}
-# ]
-
+add_to_apps_screen = [
+	{
+		"name": "hailm",
+		"logo": "/assets/hailm/logo.png",
+		"title": "HAILM",
+		"route": "/app/hailm",
+		# "has_permission": "hailm.api.permission.has_app_permission"
+	}
+]
+fixtures = [
+    "Custom Field",
+    "Property Setter",
+]
 # Includes in <head>
 # ------------------
 
@@ -149,23 +152,28 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"hailm.tasks.all"
-# 	],
-# 	"daily": [
-# 		"hailm.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"hailm.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"hailm.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"hailm.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	# "all": [
+	# 	"hailm.tasks.all"
+	# ],
+	# "daily": [
+	# 	"hailm.tasks.daily"
+	# ],
+	# "hourly": [
+	# 	"hailm.tasks.hourly"
+	# ],
+	# "weekly": [
+	# 	"hailm.tasks.weekly"
+	# ],
+	# "monthly": [
+	# 	"hailm.tasks.monthly"
+	# ],
+	"cron": {
+        "*/45 * * * *": [
+            "hailm.hailm.client.admin.fetch_and_save_token",
+        ]
+    }
+}
 
 # Testing
 # -------
@@ -183,9 +191,12 @@ app_license = "mit"
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "hailm.event.get_events"
-# }
+override_whitelisted_methods = {
+	"crm.fcrm.doctype.crm_deal.crm_deal.create_deal":
+		"hailm.hailm.overrides.whitelisted.create_deal",
+	"crm.fcrm.doctype.crm_lead.crm_lead.convert_to_deal":
+		"hailm.hailm.overrides.whitelisted.convert_to_deal",
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
