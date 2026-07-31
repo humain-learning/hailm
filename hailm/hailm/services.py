@@ -9,23 +9,22 @@ from .utils import normalize_mobile
 @frappe.whitelist()
 def sync_registered_school_list():
 	schools = fetch_school_list()
-	# frappe.enqueue(
-	# 	method=insert_or_update_schools,
-	# 	schools=schools,
-	# 	queue="long",
-	# 	timeout=600,
-	# 	job_name="sync_registered_school_list",
-	# )
-	insert_or_update_schools(schools)
+	frappe.enqueue(
+		method=insert_or_update_schools,
+		schools=schools,
+		queue="long",
+		timeout=600,
+		job_name="sync_registered_school_list",
+	)
+	# insert_or_update_schools(schools)
 
-# def create_school_deal(school):
 
 
 
 def insert_or_update_schools(schools):
 	for school in schools:
 		if not school.get("coordinatorName"):
-			print(f"Skipping school {school.get('name')} due to missing coordinator name.")
+			# print(f"Skipping school {school.get('name')} due to missing coordinator name.")
 			continue
 
 		parts = (school.get("coordinatorName") or "").split(maxsplit=1)
