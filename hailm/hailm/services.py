@@ -1,14 +1,23 @@
 import frappe
 from .client.admin import fetch_learners, fetch_school_list
-# import random
 from .overrides.whitelisted import create_deal
 from .utils import normalize_mobile
+from .deal_hooks import sync_school
 
+logger = frappe.logger("hailmsync")
 
 
 @frappe.whitelist()
-def sync_registered_school_list():
+def sync_registered_school_list(from_scheduler=True):
+	from_scheduler = frappe.utils.cint(from_scheduler)
+	if frappe.utils.now_datetime().hour == 0:
+		if from_scheduler:
+			return
+		else:
+			frappe.throw("Syncing of registered school list is not allowed between 12:00 AM and 1:00 AM. Please try again later.")
+	
 	schools = fetch_school_list()
+	
 	frappe.enqueue(
 		method=insert_or_update_schools,
 		schools=schools,
@@ -16,16 +25,11 @@ def sync_registered_school_list():
 		timeout=600,
 		job_name="sync_registered_school_list",
 	)
-	# insert_or_update_schools(schools)
-
-
-
+	return {"status": "ok"}
+	
 
 def insert_or_update_schools(schools):
 	for school in schools:
-		if not school.get("coordinatorName"):
-			# print(f"Skipping school {school.get('name')} due to missing coordinator name.")
-			continue
 
 		parts = (school.get("coordinatorName") or "").split(maxsplit=1)
 
@@ -67,7 +71,7 @@ def insert_or_update_schools(schools):
 				{"custom_school_id": school["_id"]},
 				"name",
 			)
-			print(f"Updating existing CRM Deal for school: {school.get('name')} (ID: {school.get('_id')})")
+			# print(f"Updating existing CRM Deal for school: {school.get('name')} (ID: {school.get('_id')})")
 			deal = frappe.get_doc("CRM Deal", name)
 			deal.update({
 				"organization_name": school.get("name"),
@@ -88,6 +92,43 @@ def insert_or_update_schools(schools):
 				"custom_education_board": school.get("educationBoard")
 			})
 			deal.save(ignore_permissions=True)
+	# print(sus_count, "suspended schools skipped during sync.")
+
+def sync_all_school_data():
+	schools = frappe.get_all("CRM Deal", pluck="custom_school_id")
+
+	frappe.enqueue(
+		method=update_school_data,
+		schools=schools,
+		queue="long",
+		timeout=600,
+		# job_name="sync_all_school_data",
+	)
+
+
+def update_school_data(schools):
+	for school in schools:
+		# frappe.logger("hailmsync").info(f"Syncing school data for school ID: {school}")
+		sync_school(school)
+
+@frappe.whitelist()
+def manual_webinar_registration(name, webinar_id, is_deal:bool=False):
+	if not is_deal:
+		frappe.msgprint("Manual webinar registration triggered for lead: " + name)
+		# frappe.enqueue(
+		# 	method="replace.with.method",
+		# 	args = {
+		# 		"replace_with": "method_args"
+		# 	}
+		# )
+	else:
+		frappe.msgprint("Manual webinar registration triggered for deal: " + name)
+		# frappe.enqueue(
+		# 	method="replace.with.method",
+		# 	args = {
+		# 		"replace_with": "method_args"
+		# 	}
+		# )
 
 
 

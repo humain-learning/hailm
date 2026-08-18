@@ -29,7 +29,7 @@ fixtures = [
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/hailm/css/hailm.css"
-# app_include_js = "/assets/hailm/js/hailm.js"
+# app_include_js = "/assets/hailm/js/crm_deal_list.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/hailm/css/hailm.css"
@@ -47,7 +47,7 @@ fixtures = [
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+doctype_list_js = {"CRM Deal" : "public/js/crm_deal_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
@@ -89,7 +89,7 @@ fixtures = [
 # ------------
 
 # before_install = "hailm.install.before_install"
-# after_install = "hailm.install.after_install"
+after_install = "hailm.hailm.setup.install.after_install"
 
 # Uninstallation
 # ------------
@@ -141,13 +141,12 @@ fixtures = [
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"CRM Deal": {
+		"validate": "hailm.hailm.deal_hooks.validate",
+		"before_save": "hailm.hailm.deal_hooks.before_save",
+	}
+}
 
 # Scheduled Tasks
 # ---------------
@@ -156,8 +155,8 @@ scheduler_events = {
 	# "all": [
 	# 	"hailm.tasks.all"
 	# ],
-	"daily": [
-		"hailm.hailm.scheduled_jobs.daily"
+	"hourly": [
+		"hailm.hailm.scheduled_jobs.hourly"
 	],
 	# "hourly": [
 	# 	"hailm.tasks.hourly"

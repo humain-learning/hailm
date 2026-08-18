@@ -5,5 +5,5 @@ from .services import sync_registered_school_list
 # def hourly():
 # 	fetch_and_save_token()
 
-def daily():
+def hourly():
 	sync_registered_school_list()

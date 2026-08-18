@@ -37,7 +37,7 @@ def create_school_organization(doc) -> str:
 
 @frappe.whitelist()
 def create_deal(doc: dict):
-	frappe.log_error("Custom create_deal called", "HAILM Override")
+	# frappe.log_error("Custom create_deal called", "HAILM Override")
 	deal = frappe.new_doc("CRM Deal")
 
 	contact = doc.get("contact")
