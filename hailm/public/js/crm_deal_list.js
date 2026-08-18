@@ -1,8 +1,8 @@
 frappe.listview_settings["CRM Deal"] = {
 	onload(listview) {
-		listview.page.add_inner_button(__("Sync Registered Schools"), () => {
+		listview.page.add_inner_button(__("Sync All School Data"), () => {
 			frappe.call({
-				method: "hailm.hailm.services.sync_registered_school_list",
+				method: "hailm.hailm.services.sync_all_school_data",
 				args: {
 					from_scheduler: false,
 				},

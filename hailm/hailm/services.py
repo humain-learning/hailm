@@ -17,7 +17,6 @@ def sync_registered_school_list(from_scheduler=True):
 			frappe.throw("Syncing of registered school list is not allowed between 12:00 AM and 1:00 AM. Please try again later.")
 	
 	schools = fetch_school_list()
-	
 	frappe.enqueue(
 		method=insert_or_update_schools,
 		schools=schools,
@@ -37,7 +36,10 @@ def insert_or_update_schools(schools):
 		coordinator_last_name = parts[1] if len(parts) > 1 else ""
 		# print("first name", coordinator_first_name, "last name", coordinator_last_name,"teachercount", teacher_count, "student count", student_count)
 		mobile_no = normalize_mobile(school.get("coordinatorPhone") or "")
-
+		student_strength = school.get("studentStrength", 0)
+		teacher_strength = school.get("teacherStrength", 0)
+		student_count = school.get("studentCount", 0)
+		teacher_count = school.get("teacherCount", 0)
 		if not frappe.db.exists("CRM Deal", {"custom_school_id": school.get("_id")}):
 			# print(f"Creating new CRM Deal for school: {school.get('name')} (ID: {school.get('_id')})")
 			try:
@@ -56,8 +58,10 @@ def insert_or_update_schools(schools):
 					"custom_school_type": school.get("schoolType"),
 					"custom_interested_in_ai_club": 1 if school.get("interestedInAiClub") else 0,
 					"custom_interested_in_ai_hub": 1 if school.get("interestedInAiHub") else 0,
-					"custom_student_strength": school.get("studentCount"),
-					"custom_teacher_strength": school.get("teacherCount"),
+					"custom_student_count": student_count,
+					"custom_teacher_count": teacher_count,
+					"custom_student_strength": student_strength,
+					"custom_teacher_strength": teacher_strength,
 					"custom_education_board": school.get("educationBoard")
 				})
 			except Exception as e:
@@ -87,13 +91,15 @@ def insert_or_update_schools(schools):
 				"custom_school_type": school.get("schoolType"),
 				"custom_interested_in_ai_club": 1 if school.get("interestedInAiClub") else 0,
 				"custom_interested_in_ai_hub": 1 if school.get("interestedInAiHub") else 0,
-				"custom_student_strength": school.get("studentCount"),
-				"custom_teacher_strength": school.get("teacherCount"),
+				"custom_student_count": student_count,
+				"custom_teacher_count": teacher_count,
+				"custom_student_strength": student_strength,
+				"custom_teacher_strength": teacher_strength,
 				"custom_education_board": school.get("educationBoard")
 			})
 			deal.save(ignore_permissions=True)
 	# print(sus_count, "suspended schools skipped during sync.")
-
+@frappe.whitelist()
 def sync_all_school_data():
 	schools = frappe.get_all("CRM Deal", pluck="custom_school_id")
 
@@ -104,11 +110,11 @@ def sync_all_school_data():
 		timeout=600,
 		# job_name="sync_all_school_data",
 	)
+	return {"status": "ok"}
 
 
 def update_school_data(schools):
 	for school in schools:
-		# frappe.logger("hailmsync").info(f"Syncing school data for school ID: {school}")
 		sync_school(school)
 
 @frappe.whitelist()
