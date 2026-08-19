@@ -10,12 +10,29 @@ def sync_school(school_id):
 
 	school_data = fetch_single_school(school_id)
 
+	if school_data.get("status") == "deactivated":
+		return
+
 	parts = (school_data.get("coordinatorName") or "").split(maxsplit=1)
 
 	coordinator_first_name = parts[0] if parts else ""
 	coordinator_last_name = parts[1] if len(parts) > 1 else ""
-	student_strength = school_data.get("studentStrength", 0)
-	teacher_strength = school_data.get("teacherStrength", 0)
+
+	student_strength = school_data.get("studentStrength") or 0
+	teacher_strength = school_data.get("teacherStrength") or 0
+
+	student_strength = (
+		student_strength
+		if student_strength <= 10000
+		else 1000
+	)
+
+	teacher_strength = (
+		teacher_strength
+		if teacher_strength <= 5000
+		else 60
+	)
+
 	student_count = school_data.get("studentCount", 0)
 	teacher_count = school_data.get("teacherCount", 0)
 
@@ -30,7 +47,7 @@ def sync_school(school_id):
 		"mobile_no": normalize_mobile(school_data.get("coordinatorPhone")),
 		"custom_principal_name": school_data.get("principalName"),
 		"custom_principal_email": school_data.get("principalEmail"),
-		"custom_kyc_status": (school_data.get("kyc") or {}).get("status"),		
+		"custom_kyc_status": (school_data.get("kyc") or {}).get("status"),
 		"custom_school_type": school_data.get("schoolType"),
 		"custom_interested_in_ai_club": 1 if school_data.get("interestedInAiClub") else 0,
 		"custom_interested_in_ai_hub": 1 if school_data.get("interestedInAiHub") else 0,
@@ -47,8 +64,9 @@ def sync_school(school_id):
 		"custom_state": school_data.get("state"),
 		"custom_pincode": school_data.get("pincode"),
 	})
+
 	school.save(ignore_permissions=True)
-	frappe.msgprint("School data synced successfully.")
+	return
 
 
 def validate(deal, _):

@@ -1,5 +1,5 @@
 import frappe
-from .client.admin import fetch_learners, fetch_school_list
+from .client.admin import fetch_school_list
 from .overrides.whitelisted import create_deal
 from .utils import normalize_mobile
 from .deal_hooks import sync_school
@@ -17,6 +17,7 @@ def sync_registered_school_list(from_scheduler=True):
 			frappe.throw("Syncing of registered school list is not allowed between 12:00 AM and 1:00 AM. Please try again later.")
 	
 	schools = fetch_school_list()
+
 	frappe.enqueue(
 		method=insert_or_update_schools,
 		schools=schools,
@@ -29,15 +30,28 @@ def sync_registered_school_list(from_scheduler=True):
 
 def insert_or_update_schools(schools):
 	for school in schools:
-
+		if school.get("status") == "deactivated":
+			continue
 		parts = (school.get("coordinatorName") or "").split(maxsplit=1)
 
 		coordinator_first_name = parts[0] if parts else ""
 		coordinator_last_name = parts[1] if len(parts) > 1 else ""
 		# print("first name", coordinator_first_name, "last name", coordinator_last_name,"teachercount", teacher_count, "student count", student_count)
 		mobile_no = normalize_mobile(school.get("coordinatorPhone") or "")
-		student_strength = school.get("studentStrength", 0)
-		teacher_strength = school.get("teacherStrength", 0)
+		student_strength = school.get("studentStrength") or 0
+		teacher_strength = school.get("teacherStrength") or 0
+
+		student_strength = (
+			student_strength
+			if student_strength <= 10000
+			else 1000
+		)
+
+		teacher_strength = (
+			teacher_strength
+			if teacher_strength <= 5000
+			else 60
+		)
 		student_count = school.get("studentCount", 0)
 		teacher_count = school.get("teacherCount", 0)
 		if not frappe.db.exists("CRM Deal", {"custom_school_id": school.get("_id")}):
@@ -99,6 +113,7 @@ def insert_or_update_schools(schools):
 			})
 			deal.save(ignore_permissions=True)
 	# print(sus_count, "suspended schools skipped during sync.")
+
 @frappe.whitelist()
 def sync_all_school_data():
 	schools = frappe.get_all("CRM Deal", pluck="custom_school_id")
@@ -108,10 +123,9 @@ def sync_all_school_data():
 		schools=schools,
 		queue="long",
 		timeout=600,
-		# job_name="sync_all_school_data",
+		job_name="sync_all_school_data",
 	)
-	return {"status": "ok"}
-
+	return
 
 def update_school_data(schools):
 	for school in schools:

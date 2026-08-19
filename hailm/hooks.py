@@ -158,9 +158,9 @@ scheduler_events = {
 	"hourly": [
 		"hailm.hailm.scheduled_jobs.hourly"
 	],
-	# "hourly": [
-	# 	"hailm.tasks.hourly"
-	# ],
+	"daily": [
+		"hailm.hailm.scheduled_jobs.daily"
+	],
 	# "weekly": [
 	# 	"hailm.tasks.weekly"
 	# ],
