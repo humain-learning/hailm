@@ -1,5 +1,5 @@
 import frappe
-from .client.admin import fetch_single_school
+from .client.admin import fetch_single_school,fetch_school_progress
 from .utils import normalize_mobile
 from frappe.utils import cint
 
@@ -8,64 +8,105 @@ def sync_school(school_id):
 	if not school_id:
 		frappe.throw("School ID is required.")
 
-	school_data = fetch_single_school(school_id)
+	try:
+		school_data = fetch_single_school(school_id)
+	except Exception:
+		school_data = None
+	try:
+		school_progress = fetch_school_progress(school_id)
+	except Exception:
+		school_progress = None
+	if not school_data and not school_progress:
+		frappe.throw("Could not sync school data")
+
 
 	if school_data.get("status") == "deactivated":
 		return
 
-	parts = (school_data.get("coordinatorName") or "").split(maxsplit=1)
-
-	coordinator_first_name = parts[0] if parts else ""
-	coordinator_last_name = parts[1] if len(parts) > 1 else ""
-
-	student_strength = school_data.get("studentStrength") or 0
-	teacher_strength = school_data.get("teacherStrength") or 0
-
-	student_strength = (
-		student_strength
-		if student_strength <= 10000
-		else 1000
-	)
-
-	teacher_strength = (
-		teacher_strength
-		if teacher_strength <= 5000
-		else 60
-	)
-
-	student_count = school_data.get("studentCount", 0)
-	teacher_count = school_data.get("teacherCount", 0)
 
 	school = frappe.get_doc("CRM Deal", {"custom_school_id": school_id})
 
-	school.update({
-		"organization_name": school_data.get("name"),
-		"custom_school_id": school_data.get("_id"),
-		"first_name": coordinator_first_name,
-		"last_name": coordinator_last_name,
-		"email": school_data.get("coordinatorEmail"),
-		"mobile_no": normalize_mobile(school_data.get("coordinatorPhone")),
-		"custom_principal_name": school_data.get("principalName"),
-		"custom_principal_email": school_data.get("principalEmail"),
-		"custom_kyc_status": (school_data.get("kyc") or {}).get("status"),
-		"custom_school_type": school_data.get("schoolType"),
-		"custom_interested_in_ai_club": 1 if school_data.get("interestedInAiClub") else 0,
-		"custom_interested_in_ai_hub": 1 if school_data.get("interestedInAiHub") else 0,
-		"custom_student_strength": student_strength,
-		"custom_teacher_strength": teacher_strength,
-		"custom_student_count": student_count,
-		"custom_teacher_count": teacher_count,
-		"custom_education_board": school_data.get("educationBoard"),
-		"custom_school_dashboard_url": school_data.get("micrositeUrl"),
-		"custom_teacher_registration_url": school_data.get("teacherRegistrationUrl"),
-		"custom_student_registration_url": school_data.get("studentRegistrationUrl"),
-		"custom_address": school_data.get("address"),
-		"custom_city": school_data.get("city"),
-		"custom_state": school_data.get("state"),
-		"custom_pincode": school_data.get("pincode"),
-	})
+	if school_data:
+		parts = (school_data.get("coordinatorName") or "").split(maxsplit=1)
+
+		coordinator_first_name = parts[0] if parts else ""
+		coordinator_last_name = parts[1] if len(parts) > 1 else ""
+
+		student_strength = school_data.get("studentStrength") or 0
+		teacher_strength = school_data.get("teacherStrength") or 0
+
+		student_strength = (
+			student_strength
+			if student_strength <= 10000
+			else 1000
+		)
+
+		teacher_strength = (
+			teacher_strength
+			if teacher_strength <= 5000
+			else 60
+		)
+
+		student_count = school_data.get("studentCount", 0)
+		teacher_count = school_data.get("teacherCount", 0)
+
+		school.update({
+			"organization_name": school_data.get("name"),
+			"custom_school_id": school_data.get("_id"),
+			"first_name": coordinator_first_name,
+			"last_name": coordinator_last_name,
+			"email": school_data.get("coordinatorEmail"),
+			"mobile_no": normalize_mobile(school_data.get("coordinatorPhone")),
+			"custom_principal_name": school_data.get("principalName"),
+			"custom_principal_email": school_data.get("principalEmail"),
+			"custom_kyc_status": (school_data.get("kyc") or {}).get("status"),
+			"custom_school_type": school_data.get("schoolType"),
+			"custom_interested_in_ai_club": 1 if school_data.get("interestedInAiClub") else 0,
+			"custom_interested_in_ai_hub": 1 if school_data.get("interestedInAiHub") else 0,
+			"custom_student_strength": student_strength,
+			"custom_teacher_strength": teacher_strength,
+			"custom_student_count": student_count,
+			"custom_teacher_count": teacher_count,
+			"custom_education_board": school_data.get("educationBoard"),
+			"custom_school_dashboard_url": school_data.get("micrositeUrl"),
+			"custom_teacher_registration_url": school_data.get("teacherRegistrationUrl"),
+			"custom_student_registration_url": school_data.get("studentRegistrationUrl"),
+			"custom_address": school_data.get("address"),
+			"custom_city": school_data.get("city"),
+			"custom_state": school_data.get("state"),
+			"custom_pincode": school_data.get("pincode"),
+		})
+
+	if school_progress:
+		student_progress = school_progress.get("students")
+		teacher_progress = school_progress.get("teachers")
+		school.update({
+			"custom_student_logged_in": student_progress.get("active"),
+			"custom_student_foundational_enrolled": student_progress.get("foundational").get("enrolled"),
+			"custom_student_foundational_completed": student_progress.get("foundational").get("completed"),
+			"custom_student_intermediate_enrolled": student_progress.get("intermediate").get("enrolled"),
+			"custom_student_intermediate_completed": student_progress.get("intermediate").get("completed"),
+			"custom_student_advanced_enrolled": student_progress.get("advanced").get("enrolled"),
+			"custom_student_advanced_completed": student_progress.get("advanced").get("completed"),
+			"custom_student_state_1_olympiad_purchases": student_progress.get("olympiadPurchases").get("state1"),
+			"custom_student_state_2_olympiad_purchases": student_progress.get("olympiadPurchases").get("state2"),
+			"custom_student_national_olympiad_purchases": student_progress.get("olympiadPurchases").get("national"),
+
+
+			"custom_teacher_logged_in": teacher_progress.get("active"),
+			"custom_teacher_foundational_enrolled": teacher_progress.get("foundational").get("enrolled"),
+			"custom_teacher_foundational_completed": teacher_progress.get("foundational").get("completed"),
+			"custom_teacher_intermediate_enrolled": teacher_progress.get("intermediate").get("enrolled"),
+			"custom_teacher_intermediate_completed": teacher_progress.get("intermediate").get("completed"),
+			"custom_teacher_advanced_enrolled": teacher_progress.get("advanced").get("enrolled"),
+			"custom_teacher_advanced_completed": teacher_progress.get("advanced").get("completed"),
+			"custom_teacher_state_1_olympiad_purchases": teacher_progress.get("olympiadPurchases").get("state1"),
+			"custom_teacher_state_2_olympiad_purchases": teacher_progress.get("olympiadPurchases").get("state2"),
+			"custom_teacher_national_olympiad_purchases": teacher_progress.get("olympiadPurchases").get("national"),
+		})
 
 	school.save(ignore_permissions=True)
+
 	return
 
 
@@ -96,26 +137,39 @@ def validate(deal, _):
 		deal.set("custom_onboarding_status", [])
 
 def before_save(deal, _):
-    teacher_count = cint(deal.custom_teacher_count or 0)
-    teacher_strength = cint(deal.custom_teacher_strength or 1)
+	teacher_count = cint(deal.custom_teacher_count or 0)
+	teacher_strength = cint(deal.custom_teacher_strength or 0)
 
-    student_count = cint(deal.custom_student_count or 0)
-    student_strength = cint(deal.custom_student_strength or 1)
+	student_count = cint(deal.custom_student_count or 0)
+	student_strength = cint(deal.custom_student_strength or 0)
 
-    teacher_percentage = min(
-        100,
-        (teacher_count / teacher_strength) * 100
-    )
+	teacher_percentage = _safe_percentage(teacher_count, teacher_strength)
+	student_percentage = _safe_percentage(student_count, student_strength)
 
-    student_percentage = min(
-        100,
-        (student_count / student_strength) * 100
-    )
+	deal.custom_teacher_percentage = teacher_percentage
+	deal.custom_student_percentage = student_percentage
 
-    deal.custom_teacher_percentage = teacher_percentage
-    deal.custom_student_percentage = student_percentage
+	deal.custom_teacher_active_percent = _safe_percentage(
+		deal.custom_teacher_logged_in, teacher_count
+	)
+	deal.custom_student_active_percent = _safe_percentage(
+		deal.custom_student_logged_in, student_count
+	)
 
-    if teacher_percentage < 70 or student_percentage < 70:
-        deal.custom_min_rq_met = "No"
-    else:
-        deal.custom_min_rq_met = "Yes"
+	if teacher_percentage is None or student_percentage is None:
+		deal.custom_min_rq_met = "No"
+	elif teacher_percentage < 70 or student_percentage < 70:
+		deal.custom_min_rq_met = "No"
+	else:
+		deal.custom_min_rq_met = "Yes"
+
+
+
+def _safe_percentage(numerator, denominator):
+	numerator = cint(numerator)
+	denominator = cint(denominator)
+
+	if denominator <= 0:
+		return None
+
+	return min(100, (numerator / denominator) * 100)

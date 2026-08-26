@@ -124,10 +124,20 @@ def fetch_single_school(school_id):
 
     return response.json().get("data")
 
+def fetch_school_progress(school_id):
+	url = f"{BASE_URL}/tenants/{school_id}/progress-summary"
 
+	try:
+		response = requests.get(url=url, headers=_headers(), timeout=30)
+		response.raise_for_status()
+	except requests.exceptions.RequestException:
+		frappe.log_error(
+			message=frappe.get_traceback(),
+			title="HAILM School Progress Fetch Error"
+		)
+		raise
 
-
-
+	return response.json().get("data")
 
 
 
