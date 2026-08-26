@@ -1,5 +1,6 @@
 import frappe
 from .client.admin import fetch_single_school,fetch_school_progress
+from .overrides.whitelisted import create_contact
 from .utils import normalize_mobile
 from frappe.utils import cint
 
@@ -16,11 +17,13 @@ def sync_school(school_id):
 		school_progress = fetch_school_progress(school_id)
 	except Exception:
 		school_progress = None
+
+
 	if not school_data and not school_progress:
 		frappe.throw("Could not sync school data")
 
 
-	if school_data.get("status") == "deactivated":
+	if school_data and school_data.get("status") == "deactivated":
 		return
 
 
@@ -50,6 +53,17 @@ def sync_school(school_id):
 		student_count = school_data.get("studentCount", 0)
 		teacher_count = school_data.get("teacherCount", 0)
 
+		contact_was_created = _update_primary_contact(
+			school,
+			coordinator_first_name,
+			coordinator_last_name,
+			school_data.get("coordinatorEmail"),
+			normalize_mobile(school_data.get("coordinatorPhone")),
+		)
+		if not contact_was_created:
+			school.reload()
+		_refresh_primary_contact_snapshot(school)
+
 		school.update({
 			"organization_name": school_data.get("name"),
 			"custom_school_id": school_data.get("_id"),
@@ -76,7 +90,6 @@ def sync_school(school_id):
 			"custom_state": school_data.get("state"),
 			"custom_pincode": school_data.get("pincode"),
 		})
-
 	if school_progress:
 		student_progress = school_progress.get("students")
 		teacher_progress = school_progress.get("teachers")
@@ -108,6 +121,68 @@ def sync_school(school_id):
 	school.save(ignore_permissions=True)
 
 	return
+
+
+def _update_primary_contact(deal, first_name, last_name, email, mobile_no):
+	primary_contact = next(
+		(row for row in deal.contacts if row.is_primary and row.contact),
+		None,
+	)
+	if not primary_contact:
+		contact_name = create_contact({
+			"first_name": first_name,
+			"last_name": last_name,
+			"email": email,
+			"mobile_no": mobile_no,
+			"organization_name": deal.organization_name,
+		})
+		deal.append("contacts", {"contact": contact_name, "is_primary": 1})
+		primary_contact = deal.contacts[-1]
+		contact_was_created = True
+	else:
+		contact_was_created = False
+
+	contact = frappe.get_doc("Contact", primary_contact.contact)
+	contact.first_name = first_name
+	contact.last_name = last_name
+
+	primary_email = next((row for row in contact.email_ids if row.is_primary), None)
+	if primary_email:
+		primary_email.email_id = email or ""
+	elif email:
+		contact.append("email_ids", {"email_id": email, "is_primary": 1})
+
+	primary_mobile = next(
+		(row for row in contact.phone_nos if row.is_primary_mobile_no),
+		None,
+	)
+	if primary_mobile:
+		primary_mobile.phone = mobile_no or ""
+	elif mobile_no:
+		contact.append(
+			"phone_nos",
+			{"phone": mobile_no, "is_primary_mobile_no": 1},
+		)
+
+	contact.save(ignore_permissions=True)
+	contact.reload()
+
+	_refresh_primary_contact_snapshot(deal, contact)
+	return contact_was_created
+
+
+def _refresh_primary_contact_snapshot(deal, contact=None):
+	primary_contact = next(
+		(row for row in deal.contacts if row.is_primary and row.contact),
+		None,
+	)
+	if not primary_contact:
+		return
+
+	contact = contact or frappe.get_doc("Contact", primary_contact.contact)
+	primary_contact.email = contact.email_id or ""
+	primary_contact.mobile_no = contact.mobile_no or ""
+	primary_contact.phone = contact.phone or ""
 
 
 def validate(deal, _):
