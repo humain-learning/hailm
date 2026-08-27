@@ -170,7 +170,10 @@ scheduler_events = {
 	"cron": {
         "*/45 * * * *": [
             "hailm.hailm.client.admin.fetch_and_save_token",
-        ]
+        ],
+		"0 8 * * *": [
+			"hailm.hailm.scheduled_jobs.daily_report"
+		]
     }
 }
 
