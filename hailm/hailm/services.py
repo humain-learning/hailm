@@ -131,5 +131,3 @@ def update_school_data(schools):
 	for school in schools:
 		sync_school(school)
 
-
-

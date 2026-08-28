@@ -12,7 +12,7 @@ def hourly():
 def daily():
 	sync_all_school_data()
 
-
+@frappe.whitelist()
 def daily_report():
 
 	cumulative_progress_report_file = generate_cumulative_report()
@@ -25,7 +25,7 @@ def daily_report():
 			"amit@eduxa.ai",
 			"viren@humainlearning.ai",
 			"raghav.kaul@humainlearning.ai",
-			"rajni.t@humainlearning.ai"
+			"rajni.t@humainlearning.ai",
 			"ragini@humainlearning.ai"
 		],
 		sender="schools@hailm.org",
@@ -193,3 +193,5 @@ def generate_daily_new_schools():
 		fieldnames=COLUMNS,
 		rows=new_schools,
 	)
+
+
