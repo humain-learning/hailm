@@ -82,7 +82,7 @@ def sync_school(school_id):
 			"custom_student_count": student_count,
 			"custom_teacher_count": teacher_count,
 			"custom_education_board": school_data.get("educationBoard"),
-			"custom_school_dashboard_url": school_data.get("micrositeUrl"),
+			"custom_school_dashboard_url": f"https://{school_data.get("slug")}.school.ailiteracymission.org/login",
 			"custom_teacher_registration_url": school_data.get("teacherRegistrationUrl"),
 			"custom_student_registration_url": school_data.get("studentRegistrationUrl"),
 			"custom_address": school_data.get("address"),

@@ -1,0 +1,240 @@
+{
+ "actions": [],
+ "autoname": "field:id",
+ "creation": "2026-08-31 15:08:13.241299",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "id",
+  "full_name",
+  "email",
+  "phone",
+  "phone_verified",
+  "email_verified",
+  "role",
+  "sub_role",
+  "status",
+  "username",
+  "class_label",
+  "class_level",
+  "class_levels",
+  "roll_no",
+  "creation_type",
+  "paid",
+  "paid_amount",
+  "olympiad_exam_slots",
+  "state_exam_1",
+  "state_exam_2",
+  "national_exam",
+  "foundation_completion",
+  "course_count",
+  "last_active_at",
+  "created_at",
+  "tenant_id",
+  "school_name",
+  "city",
+  "state",
+  "school_type",
+  "school_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "id",
+   "fieldtype": "Data",
+   "label": "ID",
+   "unique": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Email"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone"
+  },
+  {
+   "default": "0",
+   "fieldname": "phone_verified",
+   "fieldtype": "Check",
+   "label": "Phone Verified"
+  },
+  {
+   "default": "0",
+   "fieldname": "email_verified",
+   "fieldtype": "Check",
+   "label": "Email Verified"
+  },
+  {
+   "fieldname": "role",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Role"
+  },
+  {
+   "fieldname": "sub_role",
+   "fieldtype": "Data",
+   "label": "Sub Role"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Status"
+  },
+  {
+   "fieldname": "username",
+   "fieldtype": "Data",
+   "label": "Username"
+  },
+  {
+   "fieldname": "class_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Class"
+  },
+  {
+   "fieldname": "class_level",
+   "fieldtype": "Int",
+   "label": "Class Level"
+  },
+  {
+   "fieldname": "class_levels",
+   "fieldtype": "Code",
+   "label": "Class Levels"
+  },
+  {
+   "fieldname": "roll_no",
+   "fieldtype": "Data",
+   "label": "Roll No"
+  },
+  {
+   "fieldname": "creation_type",
+   "fieldtype": "Data",
+   "label": "Creation Type"
+  },
+  {
+   "default": "0",
+   "fieldname": "paid",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Paid"
+  },
+  {
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "label": "Paid Amount"
+  },
+  {
+   "fieldname": "olympiad_exam_slots",
+   "fieldtype": "Code",
+   "label": "Olympiad Exam Slots"
+  },
+  {
+   "default": "0",
+   "fieldname": "state_exam_1",
+   "fieldtype": "Check",
+   "label": "State Exam 1"
+  },
+  {
+   "default": "0",
+   "fieldname": "state_exam_2",
+   "fieldtype": "Check",
+   "label": "State Exam 2"
+  },
+  {
+   "default": "0",
+   "fieldname": "national_exam",
+   "fieldtype": "Check",
+   "label": "National Exam"
+  },
+  {
+   "fieldname": "foundation_completion",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Foundation Completion"
+  },
+  {
+   "fieldname": "course_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Course Count"
+  },
+  {
+   "fieldname": "last_active_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Last Active At"
+  },
+  {
+   "fieldname": "created_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Created At"
+  },
+  {
+   "fieldname": "tenant_id",
+   "fieldtype": "Data",
+   "label": "Tenant ID"
+  },
+  {
+   "fieldname": "school_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "School"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Data",
+   "label": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Data",
+   "label": "State"
+  },
+  {
+   "fieldname": "school_type",
+   "fieldtype": "Data",
+   "label": "School Type"
+  },
+  {
+   "fieldname": "school_status",
+   "fieldtype": "Data",
+   "label": "School Status"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Full Name"
+  }
+ ],
+ "grid_page_length": 50,
+ "is_virtual": 1,
+ "links": [],
+ "modified": "2026-08-31 16:39:42.585630",
+ "modified_by": "Administrator",
+ "module": "HAILM",
+ "name": "User Analytics",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "All"
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "created_at",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "full_name"
+}

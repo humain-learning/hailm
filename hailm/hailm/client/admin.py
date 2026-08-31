@@ -141,4 +141,9 @@ def fetch_school_progress(school_id):
 
 
 
+def fetch_analytics(params:dict):
+	url = f"{BASE_URL}/school-dashboard/admin/user-analytics"
+	headers = _headers()
+	response = requests.get(url=url, headers = headers, params=params)
 
+	return response.json().get("data",[])
