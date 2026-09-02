@@ -5,37 +5,55 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "personal_details_tab",
+  "user_details_section",
   "id",
   "full_name",
   "email",
+  "email_verified",
   "phone",
   "phone_verified",
-  "email_verified",
+  "column_break_qzhx",
+  "username",
+  "status",
   "role",
   "sub_role",
-  "status",
-  "username",
   "class_label",
-  "class_level",
-  "class_levels",
   "roll_no",
+  "activity_details_section",
+  "last_active_at",
   "creation_type",
+  "column_break_nxys",
+  "created_at",
+  "enrollment_details_tab",
+  "enrollment_section",
+  "course_count",
+  "course_completion_section",
+  "foundation_completion",
+  "intermediate_completion",
+  "advanced_completion",
+  "payment_details_tab",
+  "payment_section",
   "paid",
   "paid_amount",
-  "olympiad_exam_slots",
+  "olympiad_registration_section",
   "state_exam_1",
   "state_exam_2",
   "national_exam",
-  "foundation_completion",
-  "course_count",
-  "last_active_at",
-  "created_at",
-  "tenant_id",
-  "school_name",
+  "olympiad_exam_slots",
+  "school_details_tab",
+  "school",
+  "school_status",
+  "column_break_vcmk",
+  "school_type",
   "city",
   "state",
-  "school_type",
-  "school_status"
+  "metadata_tab",
+  "class_filter",
+  "class_levels",
+  "class_level",
+  "olympiad_filter",
+  "payment_filter"
  ],
  "fields": [
   {
@@ -54,36 +72,45 @@
    "fieldname": "phone",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Phone"
   },
   {
    "default": "0",
    "fieldname": "phone_verified",
    "fieldtype": "Check",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Phone Verified"
   },
   {
    "default": "0",
    "fieldname": "email_verified",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "Email Verified"
   },
   {
    "fieldname": "role",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Role"
+   "in_standard_filter": 1,
+   "label": "Role",
+   "options": "School Admin\nPrincipal\nStudent\nTeacher"
   },
   {
    "fieldname": "sub_role",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Sub Role"
   },
   {
    "fieldname": "status",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Status"
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "active\ninactive\nsuspended"
   },
   {
    "fieldname": "username",
@@ -91,19 +118,15 @@
    "label": "Username"
   },
   {
-   "fieldname": "class_label",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Class"
-  },
-  {
    "fieldname": "class_level",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Class Level"
   },
   {
    "fieldname": "class_levels",
    "fieldtype": "Code",
+   "hidden": 1,
    "label": "Class Levels"
   },
   {
@@ -121,34 +144,41 @@
    "fieldname": "paid",
    "fieldtype": "Check",
    "in_list_view": 1,
-   "label": "Paid"
+   "label": "Paid",
+   "width": "30"
   },
   {
+   "columns": 1,
    "fieldname": "paid_amount",
    "fieldtype": "Currency",
+   "in_list_view": 1,
    "label": "Paid Amount"
   },
   {
    "fieldname": "olympiad_exam_slots",
    "fieldtype": "Code",
+   "hidden": 1,
    "label": "Olympiad Exam Slots"
   },
   {
    "default": "0",
    "fieldname": "state_exam_1",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "State Exam 1"
   },
   {
    "default": "0",
    "fieldname": "state_exam_2",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "State Exam 2"
   },
   {
    "default": "0",
    "fieldname": "national_exam",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "label": "National Exam"
   },
   {
@@ -158,6 +188,7 @@
    "label": "Foundation Completion"
   },
   {
+   "default": "0",
    "fieldname": "course_count",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -176,25 +207,18 @@
    "label": "Created At"
   },
   {
-   "fieldname": "tenant_id",
-   "fieldtype": "Data",
-   "label": "Tenant ID"
-  },
-  {
-   "fieldname": "school_name",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "School"
-  },
-  {
    "fieldname": "city",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "City"
   },
   {
    "fieldname": "state",
-   "fieldtype": "Data",
-   "label": "State"
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "State",
+   "options": "Andhra Pradesh\nArunachal Pradesh\nAssam\nBihar\nChandigarh\nChhattisgarh\nDadra & Nagar Haveli\nDaman & Diu\nDelhi\nGoa\nGujarat\nHaryana\nHimachal Pradesh\nJammu & Kashmir\nJharkhand\nKarnataka\nKerala\nMadhya Pradesh\nMaharashtra\nMeghalaya\nNagaland\nOdisha\nPuducherry\nPunjab\nRajasthan\nSikkim\nTamil Nadu\nTelangana\nUttar Pradesh\nUttarakhand\nWest Bengal\ndelhi"
   },
   {
    "fieldname": "school_type",
@@ -204,19 +228,142 @@
   {
    "fieldname": "school_status",
    "fieldtype": "Data",
+   "hidden": 1,
+   "in_list_view": 1,
    "label": "School Status"
   },
   {
    "fieldname": "full_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Full Name"
+   "label": "Full Name",
+   "sticky": 1
+  },
+  {
+   "fieldname": "class_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Class"
+  },
+  {
+   "fieldname": "class_filter",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_standard_filter": 1,
+   "label": "Class",
+   "options": "Class 1\nClass 2\nClass 3\nClass 4\nClass 5\nClass 6\nClass 7\nClass 8\nClass 9\nClass 10\nClass 11\nClass 12\nOther"
+  },
+  {
+   "fieldname": "olympiad_filter",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_standard_filter": 1,
+   "label": "Olympiad",
+   "options": "State Date 1\nState Date 2\nNational"
+  },
+  {
+   "fieldname": "personal_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Personal Details"
+  },
+  {
+   "fieldname": "school",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "School",
+   "options": "CRM Organization"
+  },
+  {
+   "fieldname": "enrollment_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Enrollment Details"
+  },
+  {
+   "fieldname": "payment_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Payment Details"
+  },
+  {
+   "fieldname": "column_break_qzhx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "school_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "School Details"
+  },
+  {
+   "fieldname": "metadata_tab",
+   "fieldtype": "Tab Break",
+   "hidden": 1,
+   "label": "Metadata"
+  },
+  {
+   "fieldname": "user_details_section",
+   "fieldtype": "Section Break",
+   "label": "User Details"
+  },
+  {
+   "fieldname": "activity_details_section",
+   "fieldtype": "Section Break",
+   "label": "Activity Details"
+  },
+  {
+   "fieldname": "column_break_nxys",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.coure_count>0",
+   "fieldname": "course_completion_section",
+   "fieldtype": "Section Break",
+   "label": "Course Completion"
+  },
+  {
+   "fieldname": "column_break_vcmk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_section",
+   "fieldtype": "Section Break",
+   "label": "Payment"
+  },
+  {
+   "depends_on": "eval:doc.paid===1",
+   "fieldname": "olympiad_registration_section",
+   "fieldtype": "Section Break",
+   "label": "Olympiad Registration"
+  },
+  {
+   "fieldname": "enrollment_section",
+   "fieldtype": "Section Break",
+   "label": "Enrollment"
+  },
+  {
+   "fieldname": "payment_filter",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_standard_filter": 1,
+   "label": "Payment",
+   "options": "Paid\nFree"
+  },
+  {
+   "fieldname": "intermediate_completion",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Intermediate Completion"
+  },
+  {
+   "fieldname": "advanced_completion",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Advanced Completion"
   }
  ],
  "grid_page_length": 50,
  "is_virtual": 1,
  "links": [],
- "modified": "2026-08-31 16:39:42.585630",
+ "modified": "2026-09-02 16:25:21.244824",
  "modified_by": "Administrator",
  "module": "HAILM",
  "name": "User Analytics",

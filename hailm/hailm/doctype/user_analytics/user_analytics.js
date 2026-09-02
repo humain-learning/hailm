@@ -1,8 +1,9 @@
 // Copyright (c) 2026, Raghav Kaul and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("User Analytics", {
-// 	refresh(frm) {
+frappe.ui.form.on("User Analytics", {
+	refresh(frm) {
+		const school = frappe.get_doc
+	},
+});
 
-// 	},
-// });

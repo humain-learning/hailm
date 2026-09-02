@@ -146,4 +146,17 @@ def fetch_analytics(params:dict):
 	headers = _headers()
 	response = requests.get(url=url, headers = headers, params=params)
 
-	return response.json().get("data",[])
+	return response.json().get("data",{})
+
+def fetch_user(user_id):
+	url = f"{BASE_URL}/users/{user_id}"
+	headers = _headers()
+	response = requests.get(url=url, headers=headers)
+	return response.json().get("data",{})
+
+
+def fetch_csv_export(params:dict):
+	url = f"{BASE_URL}/school-dashboard/admin/user-analytics/export"
+	headers = _headers()
+	response = requests.get(url=url, headers=headers, params=params)
+	return response.content
