@@ -92,7 +92,7 @@ doctype_list_js = {
 # ------------
 
 # before_install = "hailm.install.before_install"
-after_install = "hailm.hailm.setup.install.after_install"
+after_install = "hailm.setup.install.after_install"
 
 # Uninstallation
 # ------------

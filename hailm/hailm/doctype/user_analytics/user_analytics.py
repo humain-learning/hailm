@@ -134,7 +134,7 @@ ALLOWED_OPERATORS = {
 	"olympiad_filter": ["="],
 	"class_filter": ["="],
 	"state": ["="],
-	"school": ["="]
+	"school": ["="],
 }
 
 FIELD_MAP = {
