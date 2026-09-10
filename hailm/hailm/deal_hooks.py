@@ -226,7 +226,7 @@ def validate(deal, _):
 		comment_name, comment_content = comment
 
 		deal.custom_last_comment_id = comment_name
-		deal.custom_last_comment = comment_content
+		deal.custom_last_comment = comment_content.removeprefix("<p>").removesuffix("</p>")
 
 
 def before_save(deal, _):
