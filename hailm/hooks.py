@@ -93,6 +93,7 @@ doctype_list_js = {
 
 # before_install = "hailm.install.before_install"
 after_install = "hailm.setup.install.after_install"
+after_migrate = "hailm.setup.install.after_migrate"
 
 # Uninstallation
 # ------------
@@ -174,9 +175,9 @@ scheduler_events = {
         "*/45 * * * *": [
             "hailm.hailm.client.admin.fetch_and_save_token",
         ],
-		"0 8 * * *": [
-			"hailm.hailm.scheduled_jobs.daily_report"
-		]
+		# "0 8 * * *": [
+		# 	"hailm.hailm.scheduled_jobs.daily_report"
+		# ]
     }
 }
 
@@ -197,10 +198,21 @@ scheduler_events = {
 # ------------------------------
 #
 override_whitelisted_methods = {
+	"crm.api.dashboard.get_dashboard": "hailm.hailm.overrides.whitelisted.get_dashboard",
 	"crm.fcrm.doctype.crm_deal.crm_deal.create_deal":
 		"hailm.hailm.overrides.whitelisted.create_deal",
 	"crm.fcrm.doctype.crm_lead.crm_lead.convert_to_deal":
 		"hailm.hailm.overrides.whitelisted.convert_to_deal",
+}
+
+crm_dashboard_charts = {
+	"axis_chart": [
+		{
+			"label": "Calls by Day",
+			"value": "calls_by_day",
+			"resolver": "hailm.hailm.dashboard.get_calls_by_day",
+		}
+	]
 }
 #
 # each overriding function accepts a `data` argument;

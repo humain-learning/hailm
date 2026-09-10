@@ -2,7 +2,28 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from crm.api.dashboard import get_dashboard as crm_get_dashboard
 from crm.fcrm.doctype.crm_deal.crm_deal import create_contact
+from hailm.hailm.dashboard import get_calls_by_day
+
+
+@frappe.whitelist()
+def get_dashboard(from_date=None, to_date=None, user=None):
+	if not from_date or not to_date:
+		from_date = frappe.utils.get_first_day(from_date or frappe.utils.nowdate())
+		to_date = frappe.utils.get_last_day(to_date or frappe.utils.nowdate())
+
+	layout = crm_get_dashboard(from_date=from_date, to_date=to_date, user=user)
+
+	roles = frappe.get_roles(frappe.session.user)
+	if "Sales User" in roles and "Sales Manager" not in roles and "System Manager" not in roles:
+		user = frappe.session.user
+
+	for item in layout:
+		if item.get("name") == "calls_by_day":
+			item["data"] = get_calls_by_day(from_date, to_date, user)
+
+	return layout
 
 
 def create_school_organization(doc) -> str:

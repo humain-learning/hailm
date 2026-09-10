@@ -145,7 +145,7 @@ def fetch_analytics(params:dict):
 	url = f"{BASE_URL}/school-dashboard/admin/user-analytics"
 	headers = _headers()
 	response = requests.get(url=url, headers = headers, params=params)
-
+	# print(response.json().get("data",{}))
 	return response.json().get("data",{})
 
 def fetch_user(user_id):

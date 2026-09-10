@@ -211,6 +211,24 @@ def validate(deal, _):
 	elif deal.status not in ("Onboarding", "Onboarded"):
 		deal.set("custom_onboarding_status", [])
 
+	comment = frappe.db.get_value(
+		"Comment",
+		{
+			"reference_doctype": "CRM Deal",
+			"reference_name": deal.name,
+			"comment_type": "Comment",
+		},
+		["name", "content"],
+		order_by="creation desc",
+	)
+
+	if comment:
+		comment_name, comment_content = comment
+
+		deal.custom_last_comment_id = comment_name
+		deal.custom_last_comment = comment_content
+
+
 def before_save(deal, _):
 	teacher_count = cint(deal.custom_teacher_count or 0)
 	teacher_strength = cint(deal.custom_teacher_strength or 0)

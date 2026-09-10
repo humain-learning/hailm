@@ -6,6 +6,7 @@ from frappe.model.document import Document
 from hailm.hailm.client.admin import fetch_analytics,fetch_user,fetch_csv_export
 import csv
 import io
+
 def convert_user(user):
 	return frappe._dict({
 		"name": user.get("_id") or user.get("id"),
@@ -35,6 +36,7 @@ def convert_user(user):
 		"advanced_completion": user.get("advancedCompletion"),
 		"course_count": user.get("courseCount"),
 		"last_active_at": user.get("lastActiveAt"),
+		"last_login_at": user.get("lastLoginAt"),
 		"created_at": user.get("createdAt"),
 		"school": user.get("tenantId"),
 		"school_name": user.get("schoolName"),
@@ -63,7 +65,7 @@ class UserAnalytics(Document):
 	@staticmethod
 	def get_list(filters=None, page_length=20, **kwargs):
 		MAX = 100
-
+		print(filters)
 		start = kwargs.get("start")
 		if start is None:
 			start = kwargs.get("limit_start")
@@ -94,7 +96,7 @@ class UserAnalytics(Document):
 			items.extend(page_items)
 			if len(page_items) < limit:
 				break
-
+		# print(items[0])
 		window = items[offset:offset + page_length]
 		return [convert_user(user) for user in window]
 	
@@ -260,3 +262,5 @@ def export_users(phone_verified=True, **kwargs):
 	frappe.local.response.filename = f"verified-phones-{frappe.utils.today()}.csv"
 	frappe.local.response.filecontent = out.getvalue().encode("utf-8-sig")
 	frappe.local.response.type = "download"
+
+
