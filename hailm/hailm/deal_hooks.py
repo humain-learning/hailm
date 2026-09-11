@@ -240,9 +240,9 @@ def before_save(deal, _):
 	else:
 		deal.custom_min_rq_met = "Yes"
 
-	comments = _concatenate_comments(deal)
+	comments,last_comment = _concatenate_comments(deal)
 	deal.custom_comments = comments
-
+	deal.custom_last_comment = last_comment
 
 def _safe_percentage(numerator, denominator):
 	numerator = cint(numerator)
@@ -268,13 +268,16 @@ def _concatenate_comments(deal):
 
 	concatenated_content = ""
 	if len(comments) == 0:
-		return concatenated_content
+		return concatenated_content, ""
 	
 	concatenated_content = "\n\n".join(
 		f"{comment.comment_by}@{comment.creation.strftime('%d-%m-%Y %I:%M %p')}: {_clean_comment_content(comment.content)}"
 		for comment in comments
 	)
-	return concatenated_content
+
+	last_comment_doc= comments[-1]
+	last_comment_content = f"{last_comment_doc.comment_by}@{last_comment_doc.creation.strftime('%d-%m-%Y %I:%M %p')}: {_clean_comment_content(last_comment_doc.content)}"
+	return concatenated_content, last_comment_content
 
 def _clean_comment_content(content):
 	if not content:

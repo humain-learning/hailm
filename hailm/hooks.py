@@ -21,7 +21,14 @@ add_to_apps_screen = [
 	}
 ]
 fixtures = [
-    "Custom Field",
+	{
+		"doctype": "Custom Field",
+		"filters": [
+			["dt", "not in", ["Marketing Campaign", "Web Form Field"]],
+			["options", "not in", ["Marketing Campaign"]],
+			["is_system_generated", "=", 0],
+		],
+    },
     "Property Setter",
 ]
 # Includes in <head>
