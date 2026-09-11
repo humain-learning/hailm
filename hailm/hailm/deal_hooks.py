@@ -3,7 +3,7 @@ from .client.admin import fetch_single_school,fetch_school_progress
 from .overrides.whitelisted import create_contact
 from .utils import normalize_mobile
 from frappe.utils import cint
-
+from bs4 import BeautifulSoup
 @frappe.whitelist()
 def sync_school(school_id):
 	if not school_id:
@@ -211,22 +211,6 @@ def validate(deal, _):
 	elif deal.status not in ("Onboarding", "Onboarded"):
 		deal.set("custom_onboarding_status", [])
 
-	comment = frappe.db.get_value(
-		"Comment",
-		{
-			"reference_doctype": "CRM Deal",
-			"reference_name": deal.name,
-			"comment_type": "Comment",
-		},
-		["name", "content"],
-		order_by="creation desc",
-	)
-
-	if comment:
-		comment_name, comment_content = comment
-
-		deal.custom_last_comment_id = comment_name
-		deal.custom_last_comment = comment_content.removeprefix("<p>").removesuffix("</p>")
 
 
 def before_save(deal, _):
@@ -256,6 +240,8 @@ def before_save(deal, _):
 	else:
 		deal.custom_min_rq_met = "Yes"
 
+	comments = _concatenate_comments(deal)
+	deal.custom_comments = comments
 
 
 def _safe_percentage(numerator, denominator):
@@ -266,3 +252,67 @@ def _safe_percentage(numerator, denominator):
 		return None
 
 	return min(100, (numerator / denominator) * 100)
+
+
+def _concatenate_comments(deal):
+	comments = frappe.get_all(
+		"Comment",
+		{
+			"reference_doctype": "CRM Deal",
+			"reference_name": deal.name,
+			"comment_type": "Comment",
+		},
+		["comment_by", "creation", "content"],
+		order_by="creation asc",
+	)
+
+	concatenated_content = ""
+	if len(comments) == 0:
+		return concatenated_content
+	
+	concatenated_content = "\n\n".join(
+		f"{comment.comment_by}@{comment.creation.strftime('%d-%m-%Y %I:%M %p')}: {_clean_comment_content(comment.content)}"
+		for comment in comments
+	)
+	return concatenated_content
+
+def _clean_comment_content(content):
+	if not content:
+		return ""
+
+	soup = BeautifulSoup(content, "html.parser")
+
+	for br in soup.find_all("br"):
+		br.replace_with("\n")
+
+	for p in soup.find_all("p"):
+		p.append("\n")
+
+	return soup.get_text().strip()
+
+@frappe.whitelist()
+def sync_school_bulk(deals):
+	schools = frappe.get_all(
+		"CRM Deal",
+		filters={"name": ["in", deals]},
+		fields=["custom_school_name", "custom_school_id"],
+	)
+	# print(schools)
+
+	total = len(schools)
+	succeeded = 0
+	failed = []
+
+	for school in schools:
+		try:
+			sync_school(school.custom_school_id)
+			succeeded+=1
+		except Exception as e:
+			failed.append({"school": school.custom_school_name, "error": str(e)})
+		
+	return {
+		"total": total,
+		"succeeded": succeeded,
+		"failed": failed,
+	}
+
