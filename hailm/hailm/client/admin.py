@@ -148,11 +148,7 @@ def fetch_analytics(params:dict):
 	# print(response.json().get("data",{}))
 	return response.json().get("data",{})
 
-def fetch_user(user_id):
-	url = f"{BASE_URL}/users/{user_id}"
-	headers = _headers()
-	response = requests.get(url=url, headers=headers)
-	return response.json().get("data",{})
+
 
 
 def fetch_csv_export(params:dict):
@@ -160,3 +156,44 @@ def fetch_csv_export(params:dict):
 	headers = _headers()
 	response = requests.get(url=url, headers=headers, params=params)
 	return response.content
+
+def fetch_user(user_id):
+	url = f"{BASE_URL}/users/{user_id}"
+	headers = _headers()
+	response = requests.get(url=url, headers=headers)
+	return response.json().get("data",{})
+
+def fetch_payments(from_date, to_date):
+	url = f"{BASE_URL}/payments"
+	headers = _headers()
+
+	params = {
+		"from": from_date if from_date else None,
+		"to": to_date if to_date else None
+	}
+	page=1
+	limit=100
+	payments = []
+	while True:
+		params["page"] = page
+		params["limit"] = limit
+
+		response = requests.get(url=url, headers=headers, params=params)
+		if response.status_code != 200:
+			frappe.log_error(message = f"Error Fetching HAILM Schools:\n Response: {response.text}", title = "HAILM Schools Fetch Error")
+			response.raise_for_status()
+			return
+
+		data = response.json()
+		items = data.get("items")
+		payments.extend(items)
+
+		if len(items) < limit:
+			print("Received ",len(items), " items in this page, breaking loop at page=", page)
+			break
+		else:
+			page+=1
+	print(payments)
+	return payments
+
+

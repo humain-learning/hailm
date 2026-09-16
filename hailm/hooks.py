@@ -167,7 +167,8 @@ scheduler_events = {
 	# 	"hailm.tasks.all"
 	# ],
 	"hourly": [
-		"hailm.hailm.scheduled_jobs.hourly"
+		"hailm.hailm.scheduled_jobs.hourly",
+		"hailm.hailm.aisensy.services.initial_dropped_payment_reminder"
 	],
 	"daily": [
 		"hailm.hailm.scheduled_jobs.daily"
@@ -185,6 +186,9 @@ scheduler_events = {
 		# "0 8 * * *": [
 		# 	"hailm.hailm.scheduled_jobs.daily_report"
 		# ]
+		"0 18 * * *": [
+			"hailm.hailm.aisensy.services.daily_dropped_payment_reminders"
+		]
     }
 }
 

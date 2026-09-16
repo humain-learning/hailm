@@ -1,8 +1,11 @@
 import frappe
-from .client.admin import fetch_school_list
+from .client.admin import fetch_school_list, fetch_payments, fetch_user
 from .overrides.whitelisted import create_deal
 from .utils import normalize_mobile
 from .deal_hooks import sync_school
+from frappe.utils import add_to_date, getdate, now_datetime
+from datetime import datetime, timezone, timedelta
+
 
 logger = frappe.logger("hailmsync")
 
