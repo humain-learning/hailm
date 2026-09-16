@@ -280,8 +280,8 @@ def _send_reminders(campaign_name, payments):
 	for payment in payments:
 		try:
 			user = fetch_user(payment.get("userId")) or {}
-			# destination = normalize_mobile(user.get("phone"))
-			destination = "+919560709221"
+			destination = normalize_mobile(user.get("phone"))
+			# destination = "+919560709221"
 			if not destination:
 				frappe.log_error(
 					message=f"No phone for userId {payment.get('userId')} "
