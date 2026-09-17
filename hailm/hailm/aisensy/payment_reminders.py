@@ -1,12 +1,9 @@
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
-
 import frappe
 from frappe.utils import getdate
-
 from hailm.hailm.client.admin import fetch_payments, fetch_user
 from hailm.hailm.utils import normalize_mobile
-
 from .api import send_aisensy_message
 
 logger = frappe.logger("aisensy", with_more_info=True,max_size=10000000)
@@ -21,7 +18,6 @@ COMPLETED_STATUSES = {"paid", "authorized"}
 # still mid-capture is not called dropped. Observed create->capture gaps run
 # to ~50 minutes, so this is a floor, not a guarantee.
 SETTLE_BUFFER = timedelta(minutes=15)
-
 # How many IST calendar days back each daily reminder looks.
 SECOND_REMINDER_DAYS_AGO = 1
 THIRD_REMINDER_DAYS_AGO = 2

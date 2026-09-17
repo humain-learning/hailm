@@ -163,13 +163,14 @@ def fetch_user(user_id):
 	response = requests.get(url=url, headers=headers)
 	return response.json().get("data",{})
 
-def fetch_payments(from_date, to_date):
+def fetch_payments(from_date, to_date,status=None):
 	url = f"{BASE_URL}/payments"
 	headers = _headers()
 
 	params = {
 		"from": from_date if from_date else None,
-		"to": to_date if to_date else None
+		"to": to_date if to_date else None,
+		"status": status
 	}
 	page=1
 	limit=100
