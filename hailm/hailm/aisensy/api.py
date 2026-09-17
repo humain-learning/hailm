@@ -2,12 +2,12 @@ import requests
 import frappe
 
 BASE_URL = "https://backend.aisensy.com/campaign/t1/api/v2"
-
+logger = frappe.logger("aisensy_api", with_more_info=True)
 
 
 def send_aisensy_message(campaign_name:str,destination:str,payment:dict,template_params:list):
     url = BASE_URL
-	
+
     payload = {
         "apiKey": frappe.conf.get("AISENSY_API_KEY"),
         "campaignName": campaign_name,
@@ -25,5 +25,12 @@ def send_aisensy_message(campaign_name:str,destination:str,payment:dict,template
         timeout=30,
     )
 
-    print(response.json())
-    # return response.json()
+    logger.info(
+        "AiSensy response: campaign=%s status=%s support_reference=%s body=%s",
+        campaign_name,
+        response.status_code,
+        payment.get("supportReference"),
+        response.text[:1000],
+    )
+    response.raise_for_status()
+    return response.text

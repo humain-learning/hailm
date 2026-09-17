@@ -193,7 +193,7 @@ def fetch_payments(from_date, to_date):
 			break
 		else:
 			page+=1
-	print(payments)
+	# print(payments)
 	return payments
 
 

@@ -9,6 +9,7 @@ from hailm.hailm.utils import normalize_mobile
 
 from .api import send_aisensy_message
 
+logger = frappe.logger("aisensy", with_more_info=True,max_size=10000000)
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -173,18 +174,29 @@ def get_recently_dropped_payments():
 	now = datetime.now(timezone.utc)
 	window_end = now - SETTLE_BUFFER
 	window_start = window_end - timedelta(hours=1)
+	logger.info(
+		"Hourly payment scan started: window_start=%s window_end=%s",
+		window_start.isoformat(),
+		window_end.isoformat(),
+	)
 
 	payments = fetch_payments(
 		(window_start - FETCH_LOOKBACK_PAD).date(),
 		now.date(),
 	)
 	last_completion = _last_completion_by_user(payments)
-
-	return _select_dropped(
+	selected = _select_dropped(
 		payments,
 		last_completion,
 		lambda created_at: window_start <= created_at < window_end,
 	)
+	logger.info(
+		"Hourly payment scan finished: fetched=%d completed_users=%d dropped_candidates=%d",
+		len(payments),
+		len(last_completion),
+		len(selected),
+	)
+	return selected
 
 
 # -------------------------------------------------------- daily selection
@@ -202,6 +214,12 @@ def get_daily_dropped_payments():
 	today_ist = datetime.now(timezone.utc).astimezone(IST).date()
 	second_day = today_ist - timedelta(days=SECOND_REMINDER_DAYS_AGO)
 	third_day = today_ist - timedelta(days=THIRD_REMINDER_DAYS_AGO)
+	logger.info(
+		"Daily payment scan started: today_ist=%s second_day=%s third_day=%s",
+		today_ist,
+		second_day,
+		third_day,
+	)
 
 	# IST day boundaries sit at 18:30 UTC, so pad below the earliest bucket
 	# before handing UTC dates to the API, then bucket locally.
@@ -226,6 +244,13 @@ def get_daily_dropped_payments():
 	# Same user in both buckets -> keep only their most recent attempt.
 	second_user_ids = {payment.get("userId") for payment in second}
 	third = [p for p in third if p.get("userId") not in second_user_ids]
+	logger.info(
+		"Daily payment scan finished: fetched=%d completed_users=%d second_candidates=%d third_candidates=%d",
+		len(payments),
+		len(last_completion),
+		len(second),
+		len(third),
+	)
 
 	return second, third
 
@@ -276,13 +301,26 @@ def build_template_params(campaign_name, payment):
 
 def _send_reminders(campaign_name, payments):
 	"""One message per payment. A bad record must not kill the batch."""
+	logger.info("Sending %d %s reminder(s)", len(payments), campaign_name)
 	sent = 0
 	for payment in payments:
+		reference = payment.get("supportReference")
+		user_id = payment.get("userId")
 		try:
-			user = fetch_user(payment.get("userId")) or {}
+			logger.debug(
+				"Preparing %s reminder: user_id=%s support_reference=%s",
+				user_id,
+				reference,
+			)
+			user = fetch_user(user_id) or {}
 			destination = normalize_mobile(user.get("phone"))
-			# destination = "+919560709221"
 			if not destination:
+				logger.warning(
+					"Skipping %s reminder: no destination for user_id=%s support_reference=%s",
+					campaign_name,
+					user_id,
+					reference,
+				)
 				frappe.log_error(
 					message=f"No phone for userId {payment.get('userId')} "
 					f"(payment {payment.get('supportReference')})",
@@ -297,7 +335,19 @@ def _send_reminders(campaign_name, payments):
 				template_params=build_template_params(campaign_name, payment),
 			)
 			sent += 1
+			logger.info(
+				"Sent %s reminder: user_id=%s support_reference=%s",
+				campaign_name,
+				user_id,
+				reference,
+			)
 		except Exception:
+			logger.exception(
+				"Failed %s reminder: user_id=%s support_reference=%s",
+				campaign_name,
+				user_id,
+				reference,
+			)
 			frappe.log_error(
 				message=f"Payment {payment.get('supportReference')}\n"
 				f"{frappe.get_traceback()}",
@@ -312,11 +362,18 @@ def _send_reminders(campaign_name, payments):
 
 def initial_dropped_payment_reminder():
 	"""Hourly cron. ~1 hour after the dropped attempt."""
+	logger.warning("Hourly dropped payment reminder job started")
 	payments = get_recently_dropped_payments()
 	if not payments:
+		logger.warning("Hourly dropped payment reminder job finished: no candidates")
 		return "Payment Failure: no dropped payments found"
 
 	sent = _send_reminders("Payment Failure", payments)
+	logger.warning(
+		"Hourly dropped payment reminder job finished: sent=%d candidates=%d",
+		sent,
+		len(payments),
+	)
 	return f"Payment Failure: sent {sent}/{len(payments)}"
 
 
@@ -326,13 +383,22 @@ def daily_dropped_payment_reminders():
 	Both buckets come from one fetch so a user in both can be collapsed to a
 	single message before anything is sent.
 	"""
+	logger.warning("Daily dropped payment reminder job started")
 	second, third = get_daily_dropped_payments()
 
 	if not second and not third:
+		logger.warning("Daily dropped payment reminder job finished: no candidates")
 		return "Daily reminders: no dropped payments found"
 
 	sent_second = _send_reminders("Payment Failure", second)
 	sent_third = _send_reminders("Payment Failure", third)
+	logger.warning(
+		"Daily dropped payment reminder job finished: second_sent=%d second_candidates=%d third_sent=%d third_candidates=%d",
+		sent_second,
+		len(second),
+		sent_third,
+		len(third),
+	)
 
 	return (
 		f"Payment Failure 2: sent {sent_second}/{len(second)}; "
