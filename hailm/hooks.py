@@ -183,15 +183,28 @@ scheduler_events = {
         "*/45 * * * *": [
             "hailm.hailm.client.admin.fetch_and_save_token",
         ],
-		# "0 8 * * *": [
-		# 	"hailm.hailm.scheduled_jobs.daily_report"
-		# ]
+
 		"0 18 * * *": [
 			"hailm.hailm.aisensy.payment_reminders.daily_dropped_payment_reminders"
+		],
+
+		"0 9 * * 4": [
+			"hailm.hailm.scheduled_jobs.general_olympiad_reminders"
+		],
+		"0 8 * * 6": [
+			"hailm.hailm.scheduled_jobs.saturday_olympiad_reminders"
+		],
+		"0 8 * * 7": [
+			"hailm.hailm.scheduled_jobs.sunday_olympiad_reminders"
+		],
+		"0 6 * * *": [
+			"hailm.hailm.scheduled_jobs.register_users_to_eklavvya"
 		]
     }
 }
-
+# "0 8 * * *": [
+# 	"hailm.hailm.scheduled_jobs.daily_report"
+# ]
 # Testing
 # -------
 

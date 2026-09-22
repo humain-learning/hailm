@@ -327,7 +327,7 @@ def _send_reminders(campaign_name, payments):
 			send_aisensy_message(
 				campaign_name=campaign_name,
 				destination=destination,
-				payment=payment,
+				username=payment.get("beneficiary").get("name"),
 				template_params=build_template_params(campaign_name, payment),
 			)
 			sent += 1

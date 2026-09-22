@@ -195,3 +195,25 @@ def generate_daily_new_schools():
 	)
 
 
+def general_olympiad_reminders():
+	frappe.enqueue(
+		method="hailm.hailm.aisensy.olympiad_reminders.general_olympiad_reminders",
+		queue="long"
+	)
+def saturday_olympiad_reminders():
+	frappe.enqueue(
+		method="hailm.hailm.aisensy.olympiad_reminders.saturday_olympiad_reminders",
+		queue="long",
+	)
+
+def sunday_olympiad_reminders():
+	frappe.enqueue(
+		method="hailm.hailm.aisensy.olympiad_reminders.sunday_olympiad_reminders",
+		queue="long",
+	)
+
+def register_users_to_eklavvya():
+	frappe.enqueue(
+		method="hailm.hailm.aisensy.olympiad_registrations.register_users",
+		queue="long"
+	)

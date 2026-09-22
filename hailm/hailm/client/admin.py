@@ -172,6 +172,7 @@ def fetch_payments(from_date, to_date,status=None):
 		"to": to_date if to_date else None,
 		"status": status
 	}
+	
 	page=1
 	limit=100
 	payments = []
@@ -193,8 +194,7 @@ def fetch_payments(from_date, to_date,status=None):
 			print("Received ",len(items), " items in this page, breaking loop at page=", page)
 			break
 		else:
+			print("Received ",len(items), " items in this page, continuing to next page")
 			page+=1
 	# print(payments)
 	return payments
-
-
