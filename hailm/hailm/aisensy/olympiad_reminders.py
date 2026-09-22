@@ -1,8 +1,11 @@
 import frappe
+from html import escape
 from .api import send_aisensy_message
 from .client import *
+from .olympiad_registrations import REGISTRATION_REPORT_RECIPIENTS
 from datetime import datetime, timezone
 from frappe.utils import getdate
+
 EXAM_SLOTS = {
 	"student": {
 		"state_date_1": {
@@ -130,30 +133,35 @@ def general_olympiad_reminders():
 	# student_recipients = []
 	teacher_recipients = build_recipient_list(teacherexam, "teacher",True)
 
-	student_count = len(student_recipients)
-	teacher_count = len(teacher_recipients)
-
 	recipients = [
 		*student_recipients,
 		*teacher_recipients,
 	]
+	failures = []
+	stats = {"recipients_processed": len(recipients[:5]), "messages_sent": 0, "failures": 0}
 	print(recipients)
 	for recipient in recipients[:5]:
-		template_params = _build_template_params(
-			recipient,
-			teacherexam,
-			"general"
-		)
-		username = recipient.get("Name").replace("  ", " ")
-		destination = "+919910491335"
 		campaign_name = "Olympiad Thursday"
-		send_aisensy_message(
-			campaign_name=campaign_name,
-			destination=destination,
-			username=username,
-			template_params=template_params
-		)
-		print(f"Sent message to {destination} for recipient {username}")
+		try:
+			template_params = _build_template_params(recipient, teacherexam, "general")
+			username = recipient.get("Name").replace("  ", " ")
+			destination = "+919910491335"
+			send_aisensy_message(
+				campaign_name=campaign_name,
+				destination=destination,
+				username=username,
+				template_params=template_params
+			)
+			stats["messages_sent"] += 1
+			print(f"Sent message to {destination} for recipient {username}")
+		except Exception as error:
+			stats["failures"] += 1
+			failures.append(_reminder_failure(recipient, campaign_name, error))
+			frappe.log_error(title="Eklavvya Olympiad Reminder Failed", message=frappe.get_traceback())
+	try:
+		send_reminder_report("Thursday", failures, stats)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya Olympiad reminder report")
 
 def saturday_olympiad_reminders():
 	studentexam = get_nearest_exam("student", datetime.now().date())
@@ -170,23 +178,31 @@ def saturday_olympiad_reminders():
 		*student_recipients,
 		*teacher_recipients,
 	]
+	failures = []
+	stats = {"recipients_processed": len(recipients[:5]), "messages_sent": 0, "failures": 0}
 	print(f"Total Recipients: {len(recipients)}")
 	for recipient in recipients[:5]:
-		template_params = _build_template_params(
-			recipient,
-			teacherexam,
-			"mock"
-		)
-		username = recipient.get("Name").replace("  ", " ")
-		destination = "+919910491335"
 		campaign_name = "Olympiad Saturday"
-		send_aisensy_message(
-			campaign_name=campaign_name,
-			destination=destination,
-			username=username,
-			template_params=template_params
-		)
-		print(f"Sent message to {destination} for recipient {username}")
+		try:
+			template_params = _build_template_params(recipient, teacherexam, "mock")
+			username = recipient.get("Name").replace("  ", " ")
+			destination = "+919910491335"
+			send_aisensy_message(
+				campaign_name=campaign_name,
+				destination=destination,
+				username=username,
+				template_params=template_params
+			)
+			stats["messages_sent"] += 1
+			print(f"Sent message to {destination} for recipient {username}")
+		except Exception as error:
+			stats["failures"] += 1
+			failures.append(_reminder_failure(recipient, campaign_name, error))
+			frappe.log_error(title="Eklavvya Olympiad Reminder Failed", message=frappe.get_traceback())
+	try:
+		send_reminder_report("Saturday", failures, stats)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya Olympiad reminder report")
 
 def sunday_olympiad_reminders():
 	studentexam = get_nearest_exam("student", datetime.now().date())
@@ -203,23 +219,71 @@ def sunday_olympiad_reminders():
 		*student_recipients,
 		*teacher_recipients,
 	]
+	failures = []
+	stats = {"recipients_processed": len(recipients[:5]), "messages_sent": 0, "failures": 0}
 	print(f"Total Recipients: {len(recipients)}")
 	for recipient in recipients[:5]:
-		template_params = _build_template_params(
-			recipient,
-			teacherexam,
-			""
-		)
-		username = recipient.get("Name").replace("  ", " ")
-		destination = "+919910491335"
 		campaign_name = "Olympiad Sunday"
-		send_aisensy_message(
-			campaign_name=campaign_name,
-			destination=destination,
-			username=username,
-			template_params=template_params
-		)
-		print(f"Sent message to {destination} for recipient {username}")
+		try:
+			template_params = _build_template_params(recipient, teacherexam, "")
+			username = recipient.get("Name").replace("  ", " ")
+			destination = "+919910491335"
+			send_aisensy_message(
+				campaign_name=campaign_name,
+				destination=destination,
+				username=username,
+				template_params=template_params
+			)
+			stats["messages_sent"] += 1
+			print(f"Sent message to {destination} for recipient {username}")
+		except Exception as error:
+			stats["failures"] += 1
+			failures.append(_reminder_failure(recipient, campaign_name, error))
+			frappe.log_error(title="Eklavvya Olympiad Reminder Failed", message=frappe.get_traceback())
+	try:
+		send_reminder_report("Sunday", failures, stats)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya Olympiad reminder report")
+
+
+def _reminder_failure(recipient, campaign_name, error):
+	return {
+		"recipient": recipient.get("Name", ""),
+		"role": recipient.get("role", ""),
+		"roll_no": recipient.get("RollNo", ""),
+		"campaign": campaign_name,
+		"reason": str(error),
+	}
+
+
+def send_reminder_report(reminder_day, failures, stats):
+	date = datetime.now(timezone.utc).strftime("%-d %b %Y")
+	rows = "".join(
+		f"<tr><td>{escape(str(failure['recipient']))}</td><td>{escape(str(failure['role']))}</td>"
+		f"<td>{escape(str(failure['roll_no']))}</td><td>{escape(failure['campaign'])}</td>"
+		f"<td>{escape(failure['reason'])}</td></tr>"
+		for failure in failures
+	)
+	failure_table = (
+		"<h3>Failures</h3><table border='1' cellpadding='6' cellspacing='0'>"
+		"<tr><th>Recipient</th><th>Role</th><th>Roll No</th><th>Campaign</th><th>Reason</th></tr>"
+		f"{rows}</table>"
+		if failures
+		else "<p>No reminder failures were recorded.</p>"
+	)
+	message = f"""
+		<h2>Eklavvya Olympiad {reminder_day} reminder report</h2>
+		<p>Recipients processed: {stats['recipients_processed']}<br>
+		Messages sent: {stats['messages_sent']}<br>
+		Failures: {stats['failures']}</p>
+		{failure_table}
+	"""
+	frappe.sendmail(
+		recipients=REGISTRATION_REPORT_RECIPIENTS,
+		sender="schools@hailm.org",
+		subject=f"Eklavvya Olympiad {reminder_day} Reminder Report - {date}",
+		message=message,
+	)
 
 def get_nearest_exam(role,date):
 	date = getdate(date) if type(date) == str else date
