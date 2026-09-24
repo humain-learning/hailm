@@ -2,7 +2,7 @@ import requests
 import frappe
 from frappe.utils.logger import set_log_level
 AISENSY_BASE_URL = "https://backend.aisensy.com/campaign/t1/api/v2"
-EKLAVVYA_BASE_URL = "https://api-v2.eklavvya.com"
+EKLAVVYA_BASE_URL = frappe.conf.get("EKLAVVYA_BASE_URL")
 
 set_log_level("DEBUG")
 logger = frappe.logger("aisensy", with_more_info=True,)

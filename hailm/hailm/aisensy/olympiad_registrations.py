@@ -239,7 +239,7 @@ def send_registration_report(failures, stats):
 	
 def fetch_and_consolidate_users():
 	yest = datetime.now(timezone.utc) - timedelta(days=1)
-
+	# today = datetime.now(timezone.utc)
 	payments = fetch_payments(yest.date(), yest.date(), status="paid")
 	unique_users = {}
 

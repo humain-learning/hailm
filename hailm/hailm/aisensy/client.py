@@ -4,7 +4,7 @@ from frappe.utils.logger import set_log_level
 from .api import _eklavvya_headers
 set_log_level("DEBUG")
 logger = frappe.logger("aisensy", with_more_info=True,)
-EKLAVVYA_BASE_URL = "https://api-v2.eklavvya.com"
+EKLAVVYA_BASE_URL = frappe.conf.get("EKLAVVYA_BASE_URL")
 
 def multipart_value(value):
 	return (None, value) if value else (None,None)

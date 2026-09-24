@@ -5,7 +5,8 @@ from .client import *
 from .olympiad_registrations import REGISTRATION_REPORT_RECIPIENTS
 from datetime import datetime, timezone
 from frappe.utils import getdate
-
+from datetime import timedelta
+from hailm.hailm.utils import normalize_mobile
 EXAM_SLOTS = {
 	"student": {
 		"state_date_1": {
@@ -126,32 +127,38 @@ def multipart_value(value):
 
 
 def general_olympiad_reminders():
-	studentexam = get_nearest_exam("student", datetime.now().date())
-	teacherexam = get_nearest_exam("teacher", datetime.now().date())
+	studentexam = get_next_exam("student", datetime.now().date())
+	teacherexam = get_next_exam("teacher", datetime.now().date())
 
-	student_recipients = build_recipient_list(studentexam, "student",True)
+	student_recipients = build_recipient_list(studentexam, "student",False) if studentexam else []
 	# student_recipients = []
-	teacher_recipients = build_recipient_list(teacherexam, "teacher",True)
+	teacher_recipients = build_recipient_list(teacherexam, "teacher",False) if teacherexam else []
+	for recipient in student_recipients:
+		recipient["exam"] = studentexam
+	for recipient in teacher_recipients:
+		recipient["exam"] = teacherexam
 
 	recipients = [
 		*student_recipients,
 		*teacher_recipients,
 	]
 	failures = []
-	stats = {"recipients_processed": len(recipients[:5]), "messages_sent": 0, "failures": 0}
-	print(recipients)
-	for recipient in recipients[:5]:
+	stats = {"recipients_processed": len(recipients), "messages_sent": 0, "failures": 0}
+	print("student true" if student_recipients else "student false")
+	print("teacher true" if teacher_recipients else "teacher false")
+	for recipient in recipients:
 		campaign_name = "Olympiad Thursday"
 		try:
-			template_params = _build_template_params(recipient, teacherexam, "general")
+			template_params = _build_template_params(recipient, recipient["exam"], "general")
 			username = recipient.get("Name").replace("  ", " ")
-			destination = "+919910491335"
+			destination = normalize_mobile(recipient.get("MobileNo"))
 			send_aisensy_message(
 				campaign_name=campaign_name,
 				destination=destination,
 				username=username,
 				template_params=template_params
 			)
+			print(template_params)
 			stats["messages_sent"] += 1
 			print(f"Sent message to {destination} for recipient {username}")
 		except Exception as error:
@@ -164,35 +171,43 @@ def general_olympiad_reminders():
 		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya Olympiad reminder report")
 
 def saturday_olympiad_reminders():
-	studentexam = get_nearest_exam("student", datetime.now().date())
-	teacherexam = get_nearest_exam("teacher", datetime.now().date())
+	date = datetime.now().date()
+	studentexam = get_today_exam("student", date)
+	teacherexam = get_today_exam("teacher", date)
 
-	student_recipients = build_recipient_list(studentexam, "student",True)
+	student_recipients = build_recipient_list(studentexam, "student",False) if studentexam else []
 	# student_recipients = []
-	teacher_recipients = build_recipient_list(teacherexam, "teacher",True)
+	teacher_recipients = build_recipient_list(teacherexam, "teacher",False) if teacherexam else []
+	for recipient in student_recipients:
+		recipient["exam"] = studentexam
+	for recipient in teacher_recipients:
+		recipient["exam"] = teacherexam
 
 	student_count = len(student_recipients)
 	teacher_count = len(teacher_recipients)
 
 	recipients = [
 		*student_recipients,
-		*teacher_recipients,
+		*teacher_recipients
 	]
 	failures = []
 	stats = {"recipients_processed": len(recipients[:5]), "messages_sent": 0, "failures": 0}
-	print(f"Total Recipients: {len(recipients)}")
-	for recipient in recipients[:5]:
+	# print(f"Total Recipients: {len(recipients)}")
+	print("student true" if student_recipients else "student false")
+	print("teacher true" if teacher_recipients else "teacher false")
+	for recipient in recipients:
 		campaign_name = "Olympiad Saturday"
 		try:
-			template_params = _build_template_params(recipient, teacherexam, "mock")
+			template_params = _build_template_params(recipient, recipient["exam"], "mock")
 			username = recipient.get("Name").replace("  ", " ")
-			destination = "+919910491335"
+			destination = normalize_mobile(recipient.get("MobileNo"))
 			send_aisensy_message(
 				campaign_name=campaign_name,
 				destination=destination,
 				username=username,
 				template_params=template_params
 			)
+			print(template_params)
 			stats["messages_sent"] += 1
 			print(f"Sent message to {destination} for recipient {username}")
 		except Exception as error:
@@ -205,12 +220,16 @@ def saturday_olympiad_reminders():
 		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya Olympiad reminder report")
 
 def sunday_olympiad_reminders():
-	studentexam = get_nearest_exam("student", datetime.now().date())
-	teacherexam = get_nearest_exam("teacher", datetime.now().date())
+	studentexam = get_today_exam("student", datetime.now().date())
+	teacherexam = get_today_exam("teacher", datetime.now().date())
 
-	student_recipients = build_recipient_list(studentexam, "student",True)
+	student_recipients = build_recipient_list(studentexam, "student",False)if studentexam else []
 	# student_recipients = []
-	teacher_recipients = build_recipient_list(teacherexam, "teacher",True)
+	teacher_recipients = build_recipient_list(teacherexam, "teacher",False) if teacherexam else []
+	for recipient in student_recipients:
+		recipient["exam"] = studentexam
+	for recipient in teacher_recipients:
+		recipient["exam"] = teacherexam
 
 	student_count = len(student_recipients)
 	teacher_count = len(teacher_recipients)
@@ -221,19 +240,21 @@ def sunday_olympiad_reminders():
 	]
 	failures = []
 	stats = {"recipients_processed": len(recipients[:5]), "messages_sent": 0, "failures": 0}
-	print(f"Total Recipients: {len(recipients)}")
-	for recipient in recipients[:5]:
+	print("student true" if student_recipients else "student false")
+	print("teacher true" if teacher_recipients else "teacher false")
+	for recipient in recipients:
 		campaign_name = "Olympiad Sunday"
 		try:
-			template_params = _build_template_params(recipient, teacherexam, "")
+			template_params = _build_template_params(recipient, recipient["exam"], "")
 			username = recipient.get("Name").replace("  ", " ")
-			destination = "+919910491335"
+			destination = normalize_mobile(recipient.get("MobileNo"))
 			send_aisensy_message(
 				campaign_name=campaign_name,
 				destination=destination,
 				username=username,
 				template_params=template_params
 			)
+			print(template_params)
 			stats["messages_sent"] += 1
 			print(f"Sent message to {destination} for recipient {username}")
 		except Exception as error:
@@ -285,14 +306,33 @@ def send_reminder_report(reminder_day, failures, stats):
 		message=message,
 	)
 
-def get_nearest_exam(role,date):
+def get_next_exam(role,date):
 	date = getdate(date) if type(date) == str else date
 	for key,value in EXAM_SLOTS[role].items():
 		mockdate = getdate(value.get("mockdate"))
 		if mockdate >= date:
+			if mockdate - date <= timedelta(days=4):
+				return key
+	return None
+
+def get_weekend_exam(role, date):
+	date = getdate(date) if type(date) == str else date
+	weekend_start = date + timedelta(days=(5 - date.weekday()) % 7)
+	weekend_end = weekend_start + timedelta(days=1)
+	for key, value in EXAM_SLOTS[role].items():
+		examdate = getdate(value.get("examdate"))
+		if weekend_start <= examdate <= weekend_end:
 			return key
 	return None
 
+def get_today_exam(role,date):
+	date = getdate(date) if type(date) == str else date
+	for key,value in EXAM_SLOTS[role].items():
+		mockdate = getdate(value.get("mockdate"))
+		examdate = getdate(value.get("examdate"))
+		if mockdate == date or examdate == date:
+			return key
+	return None
 
 def build_recipient_list(exam,role,test=False):
 	recipients = []
