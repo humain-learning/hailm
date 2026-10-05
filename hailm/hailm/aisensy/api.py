@@ -68,7 +68,7 @@ def _refresh_eklavvya_token():
 
 
 def _eklavvya_headers():
-	token = frappe.cache.get_value(key="eklavvya_token",generator=_refresh_eklavvya_token)
+	token = frappe.cache.get_value(key="eklavvya_token",generator=_refresh_eklavvya_token,expires=True)
 
 	return {
 		"Authorization": f"Bearer {token}",

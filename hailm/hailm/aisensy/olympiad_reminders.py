@@ -125,8 +125,9 @@ def multipart_value(value):
 # 	# saturday_olympiad_reminders()
 # 	sunday_olympiad_reminders()
 
+@frappe.whitelist(allow_guest=True)
+def general_olympiad_reminders(test=False):
 
-def general_olympiad_reminders():
 	studentexam = get_next_exam("student", datetime.now().date())
 	teacherexam = get_next_exam("teacher", datetime.now().date())
 
