@@ -198,3 +198,12 @@ def fetch_payments(from_date, to_date,status=None):
 			page+=1
 	# print(payments)
 	return payments
+
+def update_olympiad_password(user_id, olympiad_password):
+	url = f"{BASE_URL}/users/{user_id}"
+	headers = _headers()
+	payload = {
+		"olympiadPassword": olympiad_password
+	}
+	response = requests.patch(url=url, headers=headers, json=payload)
+	return response.json()

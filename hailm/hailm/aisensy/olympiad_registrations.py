@@ -1,12 +1,19 @@
+import csv
 import frappe
+from io import StringIO
 from html import escape
 from datetime import timezone,datetime,timedelta
 from hailm.hailm.client.admin import fetch_payments, fetch_user
 from hailm.hailm.utils import normalize_mobile
 from .api import create_new_candidate, EklavvyaExistingCandidateError, assign_to_batch, update_user_password
-
+from hailm.hailm.client.admin import update_olympiad_password
 TEST_BATCHID = 174015
 REGISTRATION_REPORT_RECIPIENTS = ["raghav.kaul@humainlearning.ai","abhi.s@humainlearning.ai","viren@humainlearning.ai", "ragini@humainlearning.ai", "parul.a@humainlearning.ai"]
+# REGISTRATION_REPORT_RECIPIENTS = ["raghav.kaul@humainlearning.ai"]
+
+DPS_45_BATCHID = 174993
+DPS_TENANT_ID = "6a715e8645808bdf275c1c4f"
+
 EXAM_SLOTS = {
 	"student": {
 		"state_date_1": {
@@ -101,7 +108,7 @@ EXAM_SLOTS = {
 			"mockdate": "2026-10-3",
 			"examdate": "2026-10-4",
 			"batch_name": "Teacher 4 Oct", 
-			"batch_id": "174076"
+			"batch_id": "174994"
 		},
 		"national": {
 			"mockdate": "2026-10-24",
@@ -114,7 +121,9 @@ EXAM_SLOTS = {
 
 def register_users():
 	paid_users = fetch_and_consolidate_users()
+	dps_teachers_skipped = 0
 	failures = []
+	registration_rows = []
 	stats = {
 		"users_processed": len(paid_users),
 		"exam_registrations": 0,
@@ -126,13 +135,18 @@ def register_users():
 	print(paid_users)
 	for user in paid_users:
 		for exam_slot in user.get("examSlots") or []:
-			if exam_slot == "state_date_1":
-				continue
+			if user.get("role") == "teacher":
+				if exam_slot in ["state_date_1", "state_date_2"]:
+					continue
+			if user.get("role") == "student":
+				if exam_slot in ["state_date_1", "state_date_2","state_date_3"]:
+					continue
 			stats["exam_registrations"] += 1
 			batch_id = _resolve_batchID(user, exam_slot)
 			candidate_id = None
 			candidate_password = None
 			assignment_attempted = False
+			failures_before = len(failures)
 			try:
 				candidate = _build_creation_payload(user, exam_slot,test=False)
 				response = create_new_candidate(candidate)
@@ -180,11 +194,16 @@ def register_users():
 					stats["assignment_failures"] += 1
 				frappe.log_error(title="Eklavvya Registration Failed", message=frappe.get_traceback())
 			finally:
+				registration_rows.append(_registration_row(user, exam_slot, candidate_id, candidate_password, "failed" if len(failures) > failures_before else "ok"))
 				if candidate_password:
-					update_user_password(user, candidate_password,batch_id)
-
+					response = update_olympiad_password(user.get("userData").get("userId"), candidate_password)
+					if response.get("success") is not True:
+						print("Failed to update Olympiad password for user:", user.get("userData").get("userId"))
+					else:
+						print("Olympiad password updated successfully for user:", user.get("userData").get("userId"))
+	print("DPS teachers enrolled for state 2 (11th Oct):", dps_teachers_skipped)
 	try:
-		send_registration_report(failures, stats)
+		send_registration_report(failures, stats, registration_rows)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya registration report")
 
@@ -202,7 +221,31 @@ def _registration_failure(user, exam_slot, candidate_id, error):
 	}
 
 
-def send_registration_report(failures, stats):
+def _registration_row(user, exam_slot, candidate_id, password, status):
+	user_data = user.get("userData", {})
+	email = str(user_data.get("email") or "")
+	if email.lower().endswith(("dummy.org", "ailiteracymission.org")):
+		email = ""
+	return [
+		f"{user_data.get('firstname', '')} {user_data.get('lastname', '')}".strip(),
+		email,
+		user_data.get("olympiadParticipantId", ""),
+		password or "",
+		exam_slot,
+		candidate_id or "",
+		status,
+	]
+
+
+def _build_registration_csv(rows):
+	output = StringIO(newline="")
+	writer = csv.writer(output)
+	writer.writerow(["name", "email", "username", "password", "exam", "candidate_id", "status"])
+	writer.writerows(rows)
+	return output.getvalue()
+
+
+def send_registration_report(failures, stats, registration_rows=()):
 	date = datetime.now(timezone.utc).strftime("%-d %b %Y")
 	rows = "".join(
 		f"<tr><td>{escape(failure['student'])}</td><td>{escape(str(failure['email']))}</td>"
@@ -233,14 +276,20 @@ def send_registration_report(failures, stats):
 		sender="schools@hailm.org",
 		subject=f"Eklavvya Olympiad Registration Report - {date}",
 		message=message,
+		attachments=[
+			{
+				"fname": f"Eklavvya Olympiad Registrations - {date}.csv",
+				"fcontent": _build_registration_csv(registration_rows),
+			}
+		],
 	)
 
 
 	
 def fetch_and_consolidate_users():
-	yest = datetime.now(timezone.utc) - timedelta(days=1)
-	# today = datetime.now(timezone.utc)
-	payments = fetch_payments(yest.date(), yest.date(), status="paid")
+	# yest = datetime(year=2026, month = 8, day = 1, tzinfo=timezone.utc)
+	today = datetime.now(timezone.utc)
+	payments = fetch_payments(today.date(), None, status="paid")
 	unique_users = {}
 
 	for payment in payments:
@@ -252,7 +301,7 @@ def fetch_and_consolidate_users():
 		payment["beneficiary"]["class"]= str(user.get("classLevel"))
 		payment["beneficiary"]["firstname"] = user.get("firstName")
 		payment["beneficiary"]["lastname"] = user.get("lastName")
-
+		payment["beneficiary"]["tenantId"] = user.get("tenantId")
 		if user_id in unique_users.keys():
 			unique_users[user_id]["examSlots"].extend(payment.get("examSlots", []))
 		else:
@@ -280,6 +329,7 @@ def _build_creation_payload(user:dict,exam_slot:str,test=False):
 		# "Class": multipart_value(user["userData"].get("class")),
 		"RollNo": multipart_value(user["userData"].get("olympiadParticipantId")),
 		"BatchID": multipart_value(_resolve_batchID(user, exam_slot)) if not test else (None,TEST_BATCHID),
+		# "BatchID": (None, TEST_BATCHID) if test else (None, DPS_45_BATCHID) if user["userData"].get("tenantId") == DPS_TENANT_ID and exam_slot=="state_date_2" else multipart_value(_resolve_batchID(user, exam_slot)),
 	}
 
 	if not (email:= user["userData"]["email"]).endswith(("dummy.org","ailiteracymission.org")):
@@ -290,6 +340,7 @@ def _build_assignment_payload(candidate_id:str,batch_id:str,test=False):
 	payload = {
 		"CandidateIDList": multipart_value(candidate_id),
 		"BatchID": multipart_value(batch_id) if not test else (None,TEST_BATCHID),
+		# "BatchID": (None, TEST_BATCHID) if test else (None, DPS_45_BATCHID) if user["userData"],
 	}
 	return payload
 
