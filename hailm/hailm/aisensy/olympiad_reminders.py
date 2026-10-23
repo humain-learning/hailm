@@ -197,7 +197,7 @@ def saturday_olympiad_reminders():
 	print("student true" if student_recipients else "student false")
 	print("teacher true" if teacher_recipients else "teacher false")
 	for recipient in recipients:
-		campaign_name = "Olympiad Saturday"
+		campaign_name = "Olympiad Saturday New"
 		try:
 			template_params = _build_template_params(recipient, recipient["exam"], "mock")
 			username = recipient.get("Name").replace("  ", " ")
@@ -221,8 +221,9 @@ def saturday_olympiad_reminders():
 		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya Olympiad reminder report")
 
 def sunday_olympiad_reminders():
-	studentexam = get_today_exam("student", datetime.now().date())
-	teacherexam = get_today_exam("teacher", datetime.now().date())
+	date = datetime.now().date()
+	studentexam = get_today_exam("student", date)
+	teacherexam = get_today_exam("teacher", date)
 
 	student_recipients = build_recipient_list(studentexam, "student",False)if studentexam else []
 	# student_recipients = []
@@ -244,7 +245,7 @@ def sunday_olympiad_reminders():
 	print("student true" if student_recipients else "student false")
 	print("teacher true" if teacher_recipients else "teacher false")
 	for recipient in recipients:
-		campaign_name = "Olympiad Sunday"
+		campaign_name = "Olympiad Sunday New"
 		try:
 			template_params = _build_template_params(recipient, recipient["exam"], "")
 			username = recipient.get("Name").replace("  ", " ")
