@@ -1,3 +1,6 @@
+import csv
+from io import StringIO
+
 import frappe
 from html import escape
 from .api import send_aisensy_message
@@ -144,6 +147,7 @@ def general_olympiad_reminders(test=False):
 		*teacher_recipients,
 	]
 	failures = []
+	recipient_rows = []
 	stats = {"recipients_processed": len(recipients), "messages_sent": 0, "failures": 0}
 	print("student true" if student_recipients else "student false")
 	print("teacher true" if teacher_recipients else "teacher false")
@@ -161,13 +165,15 @@ def general_olympiad_reminders(test=False):
 			)
 			print(template_params)
 			stats["messages_sent"] += 1
+			recipient_rows.append(_reminder_recipient_row(recipient, "sent"))
 			print(f"Sent message to {destination} for recipient {username}")
 		except Exception as error:
 			stats["failures"] += 1
+			recipient_rows.append(_reminder_recipient_row(recipient, "failed"))
 			failures.append(_reminder_failure(recipient, campaign_name, error))
 			frappe.log_error(title="Eklavvya Olympiad Reminder Failed", message=frappe.get_traceback())
 	try:
-		send_reminder_report("Thursday", failures, stats)
+		send_reminder_report("Thursday", failures, stats, recipient_rows)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya Olympiad reminder report")
 
@@ -192,6 +198,7 @@ def saturday_olympiad_reminders():
 		*teacher_recipients
 	]
 	failures = []
+	recipient_rows = []
 	stats = {"recipients_processed": len(recipients[:5]), "messages_sent": 0, "failures": 0}
 	# print(f"Total Recipients: {len(recipients)}")
 	print("student true" if student_recipients else "student false")
@@ -210,13 +217,15 @@ def saturday_olympiad_reminders():
 			)
 			print(template_params)
 			stats["messages_sent"] += 1
+			recipient_rows.append(_reminder_recipient_row(recipient, "sent"))
 			print(f"Sent message to {destination} for recipient {username}")
 		except Exception as error:
 			stats["failures"] += 1
+			recipient_rows.append(_reminder_recipient_row(recipient, "failed"))
 			failures.append(_reminder_failure(recipient, campaign_name, error))
 			frappe.log_error(title="Eklavvya Olympiad Reminder Failed", message=frappe.get_traceback())
 	try:
-		send_reminder_report("Saturday", failures, stats)
+		send_reminder_report("Saturday", failures, stats, recipient_rows)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya Olympiad reminder report")
 
@@ -241,6 +250,7 @@ def sunday_olympiad_reminders():
 		*teacher_recipients,
 	]
 	failures = []
+	recipient_rows = []
 	stats = {"recipients_processed": len(recipients[:5]), "messages_sent": 0, "failures": 0}
 	print("student true" if student_recipients else "student false")
 	print("teacher true" if teacher_recipients else "teacher false")
@@ -258,13 +268,15 @@ def sunday_olympiad_reminders():
 			)
 			print(template_params)
 			stats["messages_sent"] += 1
+			recipient_rows.append(_reminder_recipient_row(recipient, "sent"))
 			print(f"Sent message to {destination} for recipient {username}")
 		except Exception as error:
 			stats["failures"] += 1
+			recipient_rows.append(_reminder_recipient_row(recipient, "failed"))
 			failures.append(_reminder_failure(recipient, campaign_name, error))
 			frappe.log_error(title="Eklavvya Olympiad Reminder Failed", message=frappe.get_traceback())
 	try:
-		send_reminder_report("Sunday", failures, stats)
+		send_reminder_report("Sunday", failures, stats, recipient_rows)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya Olympiad reminder report")
 
@@ -279,7 +291,32 @@ def _reminder_failure(recipient, campaign_name, error):
 	}
 
 
-def send_reminder_report(reminder_day, failures, stats):
+def _reminder_recipient_row(recipient, status):
+	email = str(recipient.get("EmailID") or "")
+	if email.lower().endswith(("dummy.org", "ailiteracymission.org")):
+		email = ""
+	return [
+		recipient.get("Name", ""),
+		email,
+		recipient.get("RollNo", ""),
+		recipient.get("Password", ""),
+	]
+
+
+def _build_recipient_csv(recipient_rows):
+	output = StringIO(newline="")
+	writer = csv.writer(output)
+	writer.writerow([
+		"name",
+		"email",
+		"username",
+		"password",
+	])
+	writer.writerows(recipient_rows)
+	return output.getvalue()
+
+
+def send_reminder_report(reminder_day, failures, stats, recipient_rows):
 	date = datetime.now(timezone.utc).strftime("%-d %b %Y")
 	rows = "".join(
 		f"<tr><td>{escape(str(failure['recipient']))}</td><td>{escape(str(failure['role']))}</td>"
@@ -294,6 +331,7 @@ def send_reminder_report(reminder_day, failures, stats):
 		if failures
 		else "<p>No reminder failures were recorded.</p>"
 	)
+	recipient_csv = _build_recipient_csv(recipient_rows)
 	message = f"""
 		<h2>Eklavvya Olympiad {reminder_day} reminder report</h2>
 		<p>Recipients processed: {stats['recipients_processed']}<br>
@@ -306,6 +344,12 @@ def send_reminder_report(reminder_day, failures, stats):
 		sender="schools@hailm.org",
 		subject=f"Eklavvya Olympiad {reminder_day} Reminder Report - {date}",
 		message=message,
+		attachments=[
+			{
+				"fname": f"Eklavvya Olympiad {reminder_day} Recipients - {date}.csv",
+				"fcontent": recipient_csv,
+			}
+		],
 	)
 
 def get_next_exam(role,date):
@@ -358,7 +402,7 @@ def _build_template_params(recipient,exam,reminder_type:str):
 			recipient.get("Name").replace("  ", " ").title(),
 			exam_type,
 			getdate(EXAM_SLOTS[recipient["role"]][exam]["examdate"]).strftime("%-d %b %Y"),
-			"10AM - 2PM",
+			"10AM - 6PM",
 			"60 Minutes",
 			getdate(EXAM_SLOTS[recipient["role"]][exam]["mockdate"]).strftime("%-d %b %Y"),
 			"10AM - 2PM",
@@ -370,7 +414,7 @@ def _build_template_params(recipient,exam,reminder_type:str):
 		return [
 			recipient.get("Name").replace("  ", " ").title(),
 			f"{reminder_type.capitalize()} {exam_type} Olympiad".strip(),
-			"10AM - 2PM",
+			"10AM - 6PM",
 			"30 Minutes" if reminder_type == "mock" else "60 Minutes",
 			f"Username: {recipient['RollNo']} | Password: {recipient['Password']}",
 			"https://olympiad.ailiteracymission.org",
