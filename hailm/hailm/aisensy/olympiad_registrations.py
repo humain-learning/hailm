@@ -1,4 +1,6 @@
+import csv
 import frappe
+from io import StringIO
 from html import escape
 from datetime import timezone,datetime,timedelta
 from hailm.hailm.client.admin import fetch_payments, fetch_user
@@ -6,6 +8,7 @@ from hailm.hailm.utils import normalize_mobile
 from .api import create_new_candidate, EklavvyaExistingCandidateError, assign_to_batch, update_user_password
 
 TEST_BATCHID = 174015
+# REGISTRATION_REPORT_RECIPIENTS = ["raghav.kaul@humainlearning.ai","abhi.s@humainlearning.ai"]
 REGISTRATION_REPORT_RECIPIENTS = ["raghav.kaul@humainlearning.ai","abhi.s@humainlearning.ai","viren@humainlearning.ai", "ragini@humainlearning.ai", "parul.a@humainlearning.ai"]
 EXAM_SLOTS = {
 	"student": {
@@ -92,6 +95,20 @@ EXAM_SLOTS = {
 			"11": {"batch_name": "Grade 11 25 Oct", "batch_id": "174074"},
 			"12": {"batch_name": "Grade 12 25 Oct", "batch_id": "174075"}
 		},
+		"national_date_3": {
+			"mockdate": "2026-11-21",
+			"examdate": "2026-11-22",
+			"3": {"batch_name": "Grade 3 22 Nov", "batch_id": "175935"},
+			"4": {"batch_name": "Grade 4 22 Nov", "batch_id": "175936"},
+			"5": {"batch_name": "Grade 5 22 Nov", "batch_id": "175937"},
+			"6": {"batch_name": "Grade 6 22 Nov", "batch_id": "175938"},
+			"7": {"batch_name": "Grade 7 22 Nov", "batch_id": "175939"},
+			"8": {"batch_name": "Grade 8 22 Nov", "batch_id": "175940"},
+			"9": {"batch_name": "Grade 9 22 Nov", "batch_id": "175941"},
+			"10": {"batch_name": "Grade 10 22 Nov", "batch_id": "175942"},
+			"11": {"batch_name": "Grade 11 22 Nov", "batch_id": "175943"},
+			"12": {"batch_name": "Grade 12 22 Nov", "batch_id": "175944"}
+		},
 	},
 	"teacher": {
 		"state_date_1": {
@@ -102,6 +119,12 @@ EXAM_SLOTS = {
 			"examdate": "2026-10-4",
 			"batch_name": "Teacher 4 Oct", 
 			"batch_id": "174076"
+		},
+		"national_date_3": {
+			"mockdate": "2026-11-21",
+			"examdate": "2026-11-22",
+			"batch_name": "Teacher 22 Nov", 
+			"batch_id": "175945"
 		},
 		"national": {
 			"mockdate": "2026-10-24",
@@ -115,6 +138,7 @@ EXAM_SLOTS = {
 def register_users():
 	paid_users = fetch_and_consolidate_users()
 	failures = []
+	registrations = []
 	stats = {
 		"users_processed": len(paid_users),
 		"exam_registrations": 0,
@@ -126,16 +150,29 @@ def register_users():
 	print(paid_users)
 	for user in paid_users:
 		for exam_slot in user.get("examSlots") or []:
-			if exam_slot == "state_date_1":
+			role = user["userData"].get("role")
+			if exam_slot != "national_date_3":
 				continue
 			stats["exam_registrations"] += 1
 			batch_id = _resolve_batchID(user, exam_slot)
+			user_data = user["userData"]
+			registrations.append([
+				f"{user_data.get('firstname') or ''} {user_data.get('lastname') or ''}".strip(),
+				user_data.get("email") or "",
+				user_data.get("mobile") or "",
+				user_data.get("olympiadParticipantId") or "",
+				role,
+				user_data.get("class") if role == "student" else "",
+				exam_slot,
+				batch_id,
+			])
 			candidate_id = None
 			candidate_password = None
 			assignment_attempted = False
 			try:
 				candidate = _build_creation_payload(user, exam_slot,test=False)
 				response = create_new_candidate(candidate)
+				# response = {"Data": {"CandidateID": "DRY_RUN", "Password": None}}  # emulated success (DRY RUN)
 				candidate_id = response.get("Data", {}).get("CandidateID")
 				candidate_password = response.get("Data", {}).get("Password")
 				if not candidate_id:
@@ -156,6 +193,7 @@ def register_users():
 						candidate = _build_assignment_payload(candidate_id, batch_id, test=False)
 						assignment_attempted = True
 						response = assign_to_batch(candidate)
+						# response = {"Data": {"SuccessfulCandidateIDList": str(candidate_id), "UnsuccessfulCandidateList": "", "Message": "DRY RUN"}}  # DRY RUN - ACTUAL API CALL DISABLED
 						assignment_data = response.get("Data") or {}
 						successful_ids = str(assignment_data.get("SuccessfulCandidateIDList") or "").replace(" ", "").split(",")
 						unsuccessful_ids = str(assignment_data.get("UnsuccessfulCandidateList") or "").replace(" ", "").split(",")
@@ -182,9 +220,10 @@ def register_users():
 			finally:
 				if candidate_password:
 					update_user_password(user, candidate_password,batch_id)
+				pass
 
 	try:
-		send_registration_report(failures, stats)
+		send_registration_report(failures, stats, registrations)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Failed to send Eklavvya registration report")
 
@@ -202,7 +241,15 @@ def _registration_failure(user, exam_slot, candidate_id, error):
 	}
 
 
-def send_registration_report(failures, stats):
+def _build_registrations_csv(registrations):
+	output = StringIO(newline="")
+	writer = csv.writer(output)
+	writer.writerow(["name", "email", "mobile", "roll_no", "role", "class", "exam", "batch_id"])
+	writer.writerows(registrations)
+	return output.getvalue()
+
+
+def send_registration_report(failures, stats, registrations=()):
 	date = datetime.now(timezone.utc).strftime("%-d %b %Y")
 	rows = "".join(
 		f"<tr><td>{escape(failure['student'])}</td><td>{escape(str(failure['email']))}</td>"
@@ -233,28 +280,36 @@ def send_registration_report(failures, stats):
 		sender="schools@hailm.org",
 		subject=f"Eklavvya Olympiad Registration Report - {date}",
 		message=message,
+		attachments=[
+			{
+				"fname": f"Eklavvya Olympiad Registrations - {date}.csv",
+				"fcontent": _build_registrations_csv(registrations),
+			}
+		],
 	)
 
 
 	
 def fetch_and_consolidate_users():
-	yest = datetime.now(timezone.utc) - timedelta(days=1)
-	# today = datetime.now(timezone.utc)
-	payments = fetch_payments(yest.date(), yest.date(), status="paid")
+	today = datetime.now(timezone.utc)
+	yest = today - timedelta(days=3)
+	payments = fetch_payments(yest.date(), None, status="paid")
 	unique_users = {}
 
 	for payment in payments:
+		exam_slots = payment.get("examSlots", [])		
 		user_id = payment.get("userId")
 		user = fetch_user(user_id)
 		print(f"fetched user {user_id}")
 		payment["beneficiary"]["mobile"] = normalize_mobile(user.get("phone")).removeprefix("+91")
 		payment["beneficiary"]["olympiadParticipantId"] = user.get("olympiadParticipantId")
 		payment["beneficiary"]["class"]= str(user.get("classLevel"))
+		payment["beneficiary"]["role"] = user.get("role") or payment["beneficiary"].get("role")
 		payment["beneficiary"]["firstname"] = user.get("firstName")
 		payment["beneficiary"]["lastname"] = user.get("lastName")
 
 		if user_id in unique_users.keys():
-			unique_users[user_id]["examSlots"].extend(payment.get("examSlots", []))
+			unique_users[user_id]["examSlots"].extend(exam_slots)
 		else:
 			unique_users[user_id] = {
 				**payment,
@@ -282,7 +337,7 @@ def _build_creation_payload(user:dict,exam_slot:str,test=False):
 		"BatchID": multipart_value(_resolve_batchID(user, exam_slot)) if not test else (None,TEST_BATCHID),
 	}
 
-	if not (email:= user["userData"]["email"]).endswith(("dummy.org","ailiteracymission.org")):
+	if not (email:= user["userData"].get("email") or "").endswith(("dummy.org","ailiteracymission.org")):
 		payload["EmailID"] = multipart_value(email)
 	return payload
 

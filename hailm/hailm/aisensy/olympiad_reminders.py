@@ -13,8 +13,7 @@ from hailm.hailm.utils import normalize_mobile
 EXAM_SLOTS = {
 	"student": {
 		"state_date_1": {
-			"mockdate": "2026-08-30",
-			"examdate": "2026-08-31",
+			"date": "2026-08-31",
 			"3": {"batch_name": "","batch_id": ""},
 			"4": {"batch_name": "","batch_id": ""},
 			"5": {"batch_name": "","batch_id": ""},
@@ -96,19 +95,36 @@ EXAM_SLOTS = {
 			"11": {"batch_name": "Grade 11 25 Oct", "batch_id": "174074"},
 			"12": {"batch_name": "Grade 12 25 Oct", "batch_id": "174075"}
 		},
+		"national_date_3": {
+			"mockdate": "2026-11-21",
+			"examdate": "2026-11-22",
+			"3": {"batch_name": "Grade 3 22 Nov", "batch_id": "175935"},
+			"4": {"batch_name": "Grade 4 22 Nov", "batch_id": "175936"},
+			"5": {"batch_name": "Grade 5 22 Nov", "batch_id": "175937"},
+			"6": {"batch_name": "Grade 6 22 Nov", "batch_id": "175938"},
+			"7": {"batch_name": "Grade 7 22 Nov", "batch_id": "175939"},
+			"8": {"batch_name": "Grade 8 22 Nov", "batch_id": "175940"},
+			"9": {"batch_name": "Grade 9 22 Nov", "batch_id": "175941"},
+			"10": {"batch_name": "Grade 10 22 Nov", "batch_id": "175942"},
+			"11": {"batch_name": "Grade 11 22 Nov", "batch_id": "175943"},
+			"12": {"batch_name": "Grade 12 22 Nov", "batch_id": "175944"}
+		},
 	},
 	"teacher": {
 		"state_date_1": {
-			"mockdate": "2026-09-05",
-			"examdate": "2026-09-06",
-			"batch_name": "", 
-			"batch_id": ""
+			"batch_name": "", "batch_id": ""
 		},
 		"state_date_2": {
 			"mockdate": "2026-10-3",
 			"examdate": "2026-10-4",
 			"batch_name": "Teacher 4 Oct", 
 			"batch_id": "174076"
+		},
+		"national_date_3": {
+			"mockdate": "2026-11-21",
+			"examdate": "2026-11-22",
+			"batch_name": "Teacher 22 Nov", 
+			"batch_id": "175945"
 		},
 		"national": {
 			"mockdate": "2026-10-24",
