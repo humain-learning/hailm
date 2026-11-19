@@ -1,6 +1,5 @@
 import csv
 from io import StringIO
-
 import frappe
 from html import escape
 from .api import send_aisensy_message
@@ -12,19 +11,6 @@ from datetime import timedelta
 from hailm.hailm.utils import normalize_mobile
 EXAM_SLOTS = {
 	"student": {
-		"state_date_1": {
-			"date": "2026-08-31",
-			"3": {"batch_name": "","batch_id": ""},
-			"4": {"batch_name": "","batch_id": ""},
-			"5": {"batch_name": "","batch_id": ""},
-			"6": {"batch_name": "","batch_id": ""},
-			"7": {"batch_name": "","batch_id": ""},
-			"8": {"batch_name": "","batch_id": ""},
-			"9": {"batch_name": "","batch_id": ""},
-			"10": {"batch_name": "","batch_id": ""},
-			"11": {"batch_name": "","batch_id": ""},
-			"12": {"batch_name": "","batch_id": ""}
-		},
 		"state_date_2": {
 			"mockdate": "2026-09-26",
 			"examdate": "2026-09-27",
@@ -111,9 +97,6 @@ EXAM_SLOTS = {
 		},
 	},
 	"teacher": {
-		"state_date_1": {
-			"batch_name": "", "batch_id": ""
-		},
 		"state_date_2": {
 			"mockdate": "2026-10-3",
 			"examdate": "2026-10-4",
