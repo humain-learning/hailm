@@ -156,6 +156,7 @@ def general_olympiad_reminders(test=False):
 			template_params = _build_template_params(recipient, recipient["exam"], "general")
 			username = recipient.get("Name").replace("  ", " ")
 			destination = normalize_mobile(recipient.get("MobileNo"))
+			# destination = "+919560709221"
 			send_aisensy_message(
 				campaign_name=campaign_name,
 				destination=destination,
@@ -404,7 +405,7 @@ def _build_template_params(recipient,exam,reminder_type:str):
 			"10AM - 6PM",
 			"60 Minutes",
 			getdate(EXAM_SLOTS[recipient["role"]][exam]["mockdate"]).strftime("%-d %b %Y"),
-			"10AM - 2PM",
+			"10AM - 6PM",
 			"30 Minutes",
 			f"Username: {recipient["RollNo"]} | Password: {recipient["Password"]}"
 		]
